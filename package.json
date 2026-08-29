@@ -1,0 +1,5 @@
+{
+  "name": "camilo-apps",
+  "private": true,
+  "workspaces": ["apps/*", "packages/*"]
+}
