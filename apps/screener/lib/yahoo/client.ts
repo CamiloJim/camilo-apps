@@ -29,10 +29,27 @@ async function getSession(): Promise<CrumbSession> {
   const setCookie = cookieRes.headers.get("set-cookie") ?? "";
   const cookie = setCookie.split(";")[0] ?? "";
 
-  const crumbRes = await fetch("https://query1.finance.yahoo.com/v1/test/getcrumb", {
-    headers: { "User-Agent": USER_AGENT, Cookie: cookie },
-  });
-  const crumb = (await crumbRes.text()).trim();
+  // getcrumb también puede responder 429 — si eso se cachea como si fuera un
+  // crumb válido ("Too Many Requests" como texto), TODA consulta posterior
+  // queda rota hasta que expire el TTL. Reintentar aquí también, y nunca
+  // cachear una sesión con un crumb que no vino de una respuesta 200.
+  let crumb = "";
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const crumbRes = await fetch("https://query1.finance.yahoo.com/v1/test/getcrumb", {
+      headers: { "User-Agent": USER_AGENT, Cookie: cookie },
+    });
+    if (crumbRes.ok) {
+      crumb = (await crumbRes.text()).trim();
+      break;
+    }
+    if (attempt < 3) {
+      await new Promise((r) => setTimeout(r, attempt * 1000));
+    }
+  }
+
+  if (!crumb) {
+    throw new Error("No se pudo obtener el crumb de Yahoo Finance (rate limited o caído).");
+  }
 
   session = { cookie, crumb, fetchedAt: Date.now() };
   return session;
