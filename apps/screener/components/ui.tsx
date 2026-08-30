@@ -1,39 +1,15 @@
-// Piezas compartidas de UI para las 4 tabs. Mantenidas en un solo archivo por
-// ahora (fase 1, solo Screener) — cuando arranque el Trading Tracker esto se
-// mueve a packages/ui para que ambas apps lo compartan.
+// Piezas de UI propias del Screener.
+//
+// Card, SectionLabel, Kpi y fmtUsd se movieron a @camilo-apps/ui cuando el
+// Trading Tracker apareció como segundo consumidor real. Se reexportan desde
+// aquí para no tocar los imports de las tabs.
+//
+// Lo de abajo es específico de este análisis (PASS/FAIL de filtros, veredicto
+// de valoración, magnitudes en miles de millones) y el Tracker no lo usa, así
+// que no sube al paquete compartido.
 "use client";
 
-import type { ReactNode } from "react";
-
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return (
-    <div
-      className={`rounded-lg border border-[var(--border)] bg-[var(--surface-1)] p-5 ${className}`}
-    >
-      {children}
-    </div>
-  );
-}
-
-export function SectionLabel({ children }: { children: ReactNode }) {
-  return (
-    <div className="mb-2 text-[0.65rem] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-      {children}
-    </div>
-  );
-}
-
-export function Kpi({ label, value, sub }: { label: string; value: string; sub?: string }) {
-  return (
-    <Card className="p-4">
-      <div className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-        {label}
-      </div>
-      <div className="mt-1 font-mono text-lg font-bold text-[var(--text-primary)]">{value}</div>
-      {sub && <div className="mt-0.5 text-xs text-[var(--text-secondary)]">{sub}</div>}
-    </Card>
-  );
-}
+export { Card, SectionLabel, Kpi, fmtUsd } from "@camilo-apps/ui";
 
 export function Badge({ status }: { status: "pass" | "fail" }) {
   const styles =
@@ -82,9 +58,4 @@ export function fmtPct(v: number | null): string {
 export function fmtX(v: number | null, decimals = 2): string {
   if (v === null || Number.isNaN(v)) return "—";
   return `${v.toFixed(decimals)}x`;
-}
-
-export function fmtUsd(v: number | null): string {
-  if (v === null || Number.isNaN(v)) return "—";
-  return `$${v.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
