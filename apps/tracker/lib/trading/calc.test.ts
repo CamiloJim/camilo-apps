@@ -181,3 +181,29 @@ describe("getSemanas", () => {
     expect(semanas.every((s) => s.length > 0)).toBe(true);
   });
 });
+
+describe("conciliación de mayo de 2026", () => {
+  // Segunda comprobación contra la base: los 7 días de mayo tal como quedaron
+  // migrados. Confirma que el port cuadra en un mes con otro balance inicial.
+  const mayo: DiaInput[] = [
+    { ops: 1, ganadoras: 1, perdedoras: 0, ptsPos: 20, ptsNeg: 0 },
+    { ops: 1, ganadoras: 0, perdedoras: 1, ptsPos: 0, ptsNeg: 3.5 },
+    { ops: 2, ganadoras: 1, perdedoras: 1, ptsPos: 15, ptsNeg: 7.5 },
+    { ops: 1, ganadoras: 1, perdedoras: 0, ptsPos: 12, ptsNeg: 0 },
+    { ops: 1, ganadoras: 0, perdedoras: 1, ptsPos: 0, ptsNeg: 4 },
+    { ops: 2, ganadoras: 0, perdedoras: 2, ptsPos: 0, ptsNeg: 14 },
+    { ops: 2, ganadoras: 2, perdedoras: 0, ptsPos: 23, ptsNeg: 0 },
+  ];
+
+  it("cuadra con los totales de la base", () => {
+    const s = getStatsMes(mayo, { balanceInicial: 5122.5, contratos: 1, comision: 5 })!;
+    expect(s.totalOps).toBe(10);
+    expect(s.totalGan).toBe(5);
+    expect(s.totalPer).toBe(5);
+    expect(s.totalPtsPos).toBe(70);
+    expect(s.totalPtsNeg).toBe(29);
+    expect(s.totalBal).toBe(41);
+    // 41 pts x 50 USD = 2050 ; menos 10 ops x 5 USD = 50
+    expect(s.resultadoUsd).toBeCloseTo(2000, 6);
+  });
+});

@@ -99,3 +99,82 @@ fundamentales 24 h, precio 15 min, tasa libre de riesgo 12 h.
 
 Si la variable falta, el caché se desactiva solo y la app sigue funcionando
 pidiéndole todo a Yahoo. `/api/diag` reporta cuál de los dos estados está.
+
+---
+
+# Fase 2 — Trading Tracker · 2026-08-30
+
+## Qué quedó construido
+
+App completa en `apps/tracker/`, mismo stack y mismo sistema visual que el
+Screener. Cuatro páginas con paridad contra el Streamlit original: Registro,
+Dashboard mensual, Resumen anual y Configuración.
+
+Lo que de verdad cambia respecto al original: **los datos ya no se pierden**.
+El Streamlit los guardaba en `st.session_state`, o sea en memoria del
+navegador, y se borraban al recargar la página. El JSON del repo era un export
+manual. Ahora todo persiste en Supabase (`trading_days` / `trading_config`,
+con RLS por usuario), y tus 14 días reales de abril y mayo ya están cargados
+y conciliados.
+
+## Decisiones que tomé sin preguntar
+
+1. **`getSemanas` corrige un fallo del original.** `get_all_weeks` descartaba
+   los días hábiles anteriores al primer lunes del mes — en 2026 eso son el
+   1, 2 y 3 de abril, y el 1 de mayo. No se podían registrar operaciones esos
+   días. Ahora sí aparecen. Verifiqué que ninguno de tus 14 días reales caía
+   ahí, así que no altera nada de lo ya registrado; lo único que cambia es que
+   la numeración de semanas puede correrse un puesto en meses que no empiezan
+   en lunes.
+
+2. **El año ya no está fijo en 2026.** El original tenía `YEAR = 2026`
+   hardcodeado. Ahora se toma del reloj, para que la app no caduque en enero.
+
+3. **Un día en cero no crea fila.** Si pones todo a cero, la fila se borra en
+   vez de guardarse vacía. Así la tabla contiene solo días con actividad real
+   y el export no se llena de ruido.
+
+4. **Guardado con debounce de 800 ms**, no en cada tecla. Si cierras o cambias
+   de página con cambios pendientes, se fuerza el guardado antes de salir.
+
+5. **Los 50 USD por punto** pasaron de estar sueltos dentro de la fórmula a una
+   constante con nombre (`USD_POR_PUNTO` en `lib/trading/calc.ts`), con un
+   comentario que explica qué son. **Si Camilo opera otro instrumento hay que
+   cambiarlo ahí** — para el Nasdaq E-mini serían 20, no 50, y todos los
+   resultados en dólares cambiarían.
+
+6. **Se conservaron rarezas del original a propósito**, porque cambiarlas
+   alteraría cifras ya registradas: el orden de los `if` de `get_insight` (los
+   rangos se solapan; un día con tasa 90 y R/B 2 sale como "Operativa
+   eficiente" solo porque esa condición se evalúa antes) y el fallback del R/B
+   cuando no hubo operaciones perdedoras.
+
+## packages/ui
+
+Dejó de estar vacío. Subió **solo lo que usan las dos apps**: `Card`,
+`SectionLabel`, `Kpi`, `fmtUsd` y los tokens de color. Lo que tiene un solo
+consumidor se quedó donde estaba (`Badge`, `Verdict`, `marginColor`,
+`fmtBillions` siguen en el Screener). El Screener quedó verificado después del
+cambio: build limpio y sus 14 tests siguen pasando.
+
+## Estado
+
+✅ `apps/tracker`: build limpio, **21/21 tests**, lint sin errores.
+✅ `apps/screener`: build limpio, 14/14 tests (verificado tras tocar packages/ui).
+
+Dos de los 21 tests son conciliaciones contra tus datos reales: abril (13 ops,
+23,75 pts, 1.122,50 USD) y mayo (10 ops, 41 pts, 2.000 USD). Si alguien rompe
+la aritmética, esos tests lo cazan.
+
+## Lo que falta y no depende de mí
+
+1. **Crear el proyecto en Vercel y mover el dominio.** `tracker.camilojimenez.com`
+   ya resuelve por DNS pero hoy sirve el Screener: hay que quitarlo de ese
+   proyecto y apuntarlo al nuevo. Eso lo hace el coordinador, no yo.
+2. **Nadie ha visto la app en un navegador todavía.** Compila y los tests pasan,
+   pero la UI no se ha mirado con ojos humanos. Vale la pena abrir
+   `npm run dev` en `apps/tracker` y revisar sobre todo la rejilla de Registro,
+   que es la pantalla que más se usa.
+3. **El Tracker no necesita `SUPABASE_SERVICE_ROLE_KEY`**, a diferencia del
+   Screener: no tiene caché, escribe con la sesión del propio usuario y la RLS
+   lo acota a sus filas. En Vercel solo hacen falta las dos variables públicas.
