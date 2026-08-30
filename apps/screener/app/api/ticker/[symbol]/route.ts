@@ -65,7 +65,9 @@ export async function GET(
     const hist = buildHistoricalTable(timeseries);
 
     const wacc = calcWacc({
-      beta: null, // Yahoo no expone beta en estos módulos gratuitos; se resuelve en el cliente si el usuario lo fija manual
+      // `beta` sí viene en defaultKeyStatistics; si falta, calcWacc usa 1.0 por
+      // defecto, igual que el dcf.py original cuando info.get("beta") era None.
+      beta: quoteSummary.defaultKeyStatistics?.beta?.raw ?? null,
       riskFreeRate: riskFree.rate,
       interestExpense: toSeries(timeseries, "annualInterestExpense"),
       totalDebt: toSeries(timeseries, "annualTotalDebt"),
