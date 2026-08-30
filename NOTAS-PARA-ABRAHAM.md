@@ -90,3 +90,12 @@ un entorno sin rate-limit propio antes de darlo por 100% probado.
 
 ## Deploy verificado — 2026-08-29
 Variables de entorno agregadas en Vercel (Production/Preview/Development). Confirmando que el deploy de producción las toma.
+
+## Caché de datos de mercado — 2026-08-30
+
+Activo. Tabla `market_cache` en Supabase, con RLS: los autenticados leen, solo
+el servidor escribe (con `SUPABASE_SERVICE_ROLE_KEY`). TTL por tipo de dato:
+fundamentales 24 h, precio 15 min, tasa libre de riesgo 12 h.
+
+Si la variable falta, el caché se desactiva solo y la app sigue funcionando
+pidiéndole todo a Yahoo. `/api/diag` reporta cuál de los dos estados está.
