@@ -178,3 +178,9 @@ la aritmética, esos tests lo cazan.
 3. **El Tracker no necesita `SUPABASE_SERVICE_ROLE_KEY`**, a diferencia del
    Screener: no tiene caché, escribe con la sesión del propio usuario y la RLS
    lo acota a sus filas. En Vercel solo hacen falta las dos variables públicas.
+
+## Dominio del Tracker — 2026-08-30
+
+`tracker.camilojimenez.com` movido del proyecto `camilo-screener` al nuevo
+`camilo-tracker` en Vercel. El CNAME en QUIC.cloud no se tocó: apuntaba al
+equipo, no a un proyecto concreto, así que validó solo.
