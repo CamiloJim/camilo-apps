@@ -6,6 +6,7 @@ import {
 } from "@/lib/yahoo/client";
 import { buildHistoricalTable } from "@/lib/finance/historical";
 import { calcWacc } from "@/lib/finance/dcf";
+import { cached, TTL } from "@/lib/cache/market-cache";
 import type { TickerMetrics } from "@/lib/finance/screener";
 import type { AnnualPoint } from "@/lib/finance/dcf";
 
@@ -26,10 +27,15 @@ export async function GET(
   const ticker = symbol.trim().toUpperCase();
 
   try {
+    // Cada dato con su propio TTL: los fundamentales cambian por trimestre, el
+    // precio en mercado abierto, y la tasa libre de riesgo es una sola para
+    // toda la app (por eso su clave no lleva ticker).
     const [quoteSummary, timeseries, riskFree] = await Promise.all([
-      fetchQuoteSummary(ticker),
-      fetchFundamentalsTimeseries(ticker),
-      fetchRiskFreeRate(),
+      cached(`quote:${ticker}`, TTL.quote, () => fetchQuoteSummary(ticker)),
+      cached(`fundamentals:${ticker}`, TTL.fundamentals, () =>
+        fetchFundamentalsTimeseries(ticker)
+      ),
+      cached("riskfree:TNX", TTL.riskFree, () => fetchRiskFreeRate()),
     ]);
 
     if (!quoteSummary || quoteSummary.price?.regularMarketPrice?.raw == null) {

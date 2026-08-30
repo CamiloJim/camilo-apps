@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { diagnose } from "@/lib/yahoo/client";
+import { isCacheEnabled } from "@/lib/cache/market-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -10,6 +11,11 @@ export const dynamic = "force-dynamic";
  * fallaban con el mismo mensaje. Esto los separa.
  */
 export async function GET() {
-  const result = await diagnose();
-  return NextResponse.json(result);
+  const yahoo = await diagnose();
+  return NextResponse.json({
+    ...yahoo,
+    cache: isCacheEnabled()
+      ? "activo (Supabase)"
+      : "desactivado — falta SUPABASE_SERVICE_ROLE_KEY",
+  });
 }
