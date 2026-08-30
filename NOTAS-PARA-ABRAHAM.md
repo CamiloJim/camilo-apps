@@ -87,3 +87,6 @@ repo `github.com/AbrahamRubioG/camilo-apps` (rama `main`).
 ✅ Compila limpio (`npm run build`) · ✅ 14/14 tests · ✅ lint sin errores ·
 ⚠️ Fetch de Yahoo verificado exitoso una vez, pendiente de reverificar en
 un entorno sin rate-limit propio antes de darlo por 100% probado.
+
+## Deploy verificado — 2026-08-29
+Variables de entorno agregadas en Vercel (Production/Preview/Development). Confirmando que el deploy de producción las toma.
