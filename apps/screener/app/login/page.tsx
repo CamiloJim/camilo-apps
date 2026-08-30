@@ -112,8 +112,8 @@ export default function LoginPage() {
         </button>
 
         <p className="mt-4 text-center text-xs text-[var(--text-muted)]">
-          Las cuentas las crea un administrador. Si no tienes acceso, contacta a
-          Camilo o a Abraham.
+          Las cuentas las crea un administrador. Si no tienes acceso, contacta al
+          Equipo de Soporte.
         </p>
       </form>
     </main>
