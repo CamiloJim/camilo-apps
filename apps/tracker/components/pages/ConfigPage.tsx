@@ -9,7 +9,7 @@ import {
   type MapaDias,
   type RespaldoJson,
 } from "@/lib/trading/data";
-import { Card, InputNum, SectionLabel } from "../ui";
+import { InputNum, Widget } from "../ui";
 
 export function ConfigPage({
   anio,
@@ -57,16 +57,14 @@ export function ConfigPage({
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <Card>
-        <SectionLabel>Configuración de {MESES[mes - 1]}</SectionLabel>
-        <p className="mb-4 text-xs text-[var(--text-secondary)]">
-          Se guarda por mes, no global: el balance inicial cambia de un mes a otro.
-        </p>
-
+    <div className="grid items-start gap-4 lg:grid-cols-2">
+      <Widget
+        title={`Configuración de ${MESES[mes - 1]}`}
+        meta="Se guarda por mes, no global: el balance inicial cambia de un mes a otro."
+      >
         <div className="space-y-3">
           <div>
-            <label className="mb-1 block text-xs text-[var(--text-secondary)]">
+            <label className="cj-section-label mb-1 block">
               Balance inicial (USD)
             </label>
             <InputNum
@@ -77,7 +75,7 @@ export function ConfigPage({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-[var(--text-secondary)]">
+            <label className="cj-section-label mb-1 block">
               N.º de contratos
             </label>
             <InputNum
@@ -88,7 +86,7 @@ export function ConfigPage({
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs text-[var(--text-secondary)]">
+            <label className="cj-section-label mb-1 block">
               Comisión por operación (USD)
             </label>
             <InputNum
@@ -100,31 +98,26 @@ export function ConfigPage({
           </div>
         </div>
 
-        <p className="mt-4 rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-xs text-[var(--text-secondary)]">
+        <p className="cj-widget__note rounded-[var(--radius-control)] border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2">
           El resultado en dólares se calcula como{" "}
           <span className="font-mono">puntos × contratos × {USD_POR_PUNTO}</span>, menos las
           comisiones. Esos {USD_POR_PUNTO} USD por punto corresponden al contrato de futuros
           que se opera; si cambia el instrumento, hay que ajustarlo en el código.
         </p>
-      </Card>
+      </Widget>
 
-      <div className="space-y-6">
-        <Card>
-          <SectionLabel>Respaldo</SectionLabel>
-          <p className="mb-3 text-xs text-[var(--text-secondary)]">
-            El archivo usa el mismo formato que la versión anterior, así que los respaldos
-            antiguos siguen sirviendo.
-          </p>
+      <div className="space-y-4">
+        <Widget
+          title="Respaldo"
+          meta="Mismo formato que la versión anterior: los respaldos antiguos siguen sirviendo."
+        >
           <div className="flex flex-wrap gap-2">
-            <button
-              onClick={descargar}
-              className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--series-1)] hover:text-[var(--text-primary)]"
-            >
+            <button onClick={descargar} className="cj-button cj-button--secondary">
               Descargar JSON
             </button>
             <button
               onClick={() => inputFile.current?.click()}
-              className="rounded-md border border-[var(--border)] px-3 py-1.5 text-sm text-[var(--text-secondary)] transition-colors hover:border-[var(--series-1)] hover:text-[var(--text-primary)]"
+              className="cj-button cj-button--secondary"
             >
               Importar JSON
             </button>
@@ -141,19 +134,21 @@ export function ConfigPage({
             />
           </div>
           {mensaje && (
-            <p className="mt-3 text-xs text-[var(--text-secondary)]" role="status">
+            <p className="cj-widget__note" role="status">
               {mensaje}
             </p>
           )}
-        </Card>
+        </Widget>
 
-        <Card>
-          <SectionLabel>Reiniciar datos</SectionLabel>
-          <p className="mb-3 text-xs" style={{ color: "var(--status-warning)" }}>
+        <Widget title="Reiniciar datos">
+          <p
+            className="m-0 text-[length:var(--text-md)]"
+            style={{ color: "var(--status-warning)" }}
+          >
             Borra todos los registros de {anio}. No se puede deshacer — descarga un respaldo
             antes.
           </p>
-          <label className="flex items-center gap-2 text-xs text-[var(--text-secondary)]">
+          <label className="flex items-center gap-2 text-[length:var(--text-md)] text-[var(--text-secondary)]">
             <input
               type="checkbox"
               checked={confirmado}
@@ -169,16 +164,15 @@ export function ConfigPage({
               setConfirmado(false);
               setMensaje(`Datos de ${anio} borrados.`);
             }}
-            className="mt-3 rounded-md px-3 py-1.5 text-sm font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-40"
-            style={{ background: "var(--status-critical)" }}
+            className="cj-button self-start"
+            style={{ background: "var(--status-critical)", color: "#fff" }}
           >
             Reiniciar
           </button>
-        </Card>
+        </Widget>
 
-        <Card>
-          <SectionLabel>Guía de métricas</SectionLabel>
-          <dl className="space-y-1.5 text-xs">
+        <Widget title="Guía de métricas">
+          <dl className="m-0 space-y-1.5 text-[length:var(--text-md)]">
             {[
               ["Tasa de éxito", "% de operaciones ganadoras. Meta: ≥ 50 %"],
               ["Ratio R/B", "Ganancia media ÷ pérdida media. Meta: ≥ 1,5"],
@@ -187,14 +181,14 @@ export function ConfigPage({
               ["Revisar errores", "Tasa < 40 % o R/B < 0,5"],
             ].map(([k, v]) => (
               <div key={k} className="flex gap-2">
-                <dt className="shrink-0 font-medium" style={{ color: "var(--series-1)" }}>
+                <dt className="m-0 shrink-0 font-semibold" style={{ color: "var(--gold)" }}>
                   {k}:
                 </dt>
-                <dd className="text-[var(--text-secondary)]">{v}</dd>
+                <dd className="m-0 text-[var(--text-secondary)]">{v}</dd>
               </div>
             ))}
           </dl>
-        </Card>
+        </Widget>
       </div>
     </div>
   );

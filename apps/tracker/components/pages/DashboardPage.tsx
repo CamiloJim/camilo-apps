@@ -1,52 +1,31 @@
 "use client";
 
-import {
-  Bar,
-  BarChart,
-  Cell,
-  CartesianGrid,
-  Area,
-  AreaChart,
-  Line,
-  LineChart,
-  Pie,
-  PieChart,
-  ReferenceLine,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  Legend,
-} from "recharts";
 import { calcDia, type ConfigMes, type DiaCalculado, getStatsMes } from "@/lib/trading/calc";
 import type { MapaDias } from "@/lib/trading/data";
-import { Gauge } from "../Gauge";
 import {
+  CHART_COLOR,
   Card,
+  ChartLegend,
   ChipInsight,
-  Kpi,
-  SectionLabel,
+  ComboChart,
+  DivergingStackedChart,
+  DonutChart,
+  Gauge,
+  KpiStrip,
+  LineChart,
   Tabla,
   Td,
   Th,
+  Widget,
+  WidgetGrid,
   colorRatio,
   colorSigno,
   colorTasa,
   fmtPuntos,
   fmtRatio,
   fmtTasa,
-  fmtTooltip,
   fmtUsd,
 } from "../ui";
-
-const ejes = { grid: "var(--border)", axis: "var(--text-muted)" };
-
-const tooltipStyle = {
-  background: "var(--surface-2)",
-  border: "1px solid var(--border)",
-  borderRadius: 6,
-  fontSize: 12,
-} as const;
 
 interface FilaDia extends DiaCalculado {
   fecha: string;
@@ -88,7 +67,7 @@ export function DashboardPage({
   if (!stats || stats.totalOps === 0) {
     return (
       <Card>
-        <p className="text-sm text-[var(--text-secondary)]">
+        <p className="text-[length:var(--text-md)] text-[var(--text-secondary)]">
           Aún no hay operaciones registradas este mes. Ve a <b>Registro</b> para empezar.
         </p>
       </Card>
@@ -97,11 +76,13 @@ export function DashboardPage({
 
   // Curva de equidad: balance acumulado día a día. Con reduce en vez de una
   // variable mutable, para no reasignar durante el render.
-  const equidad = filas.reduce<{ etiqueta: string; acumulado: number }[]>((acc, f) => {
-    const previo = acc.length > 0 ? acc[acc.length - 1].acumulado : 0;
-    acc.push({ etiqueta: f.etiqueta, acumulado: Number((previo + f.balance).toFixed(2)) });
+  const equidad = filas.reduce<number[]>((acc, f) => {
+    const previo = acc.length > 0 ? acc[acc.length - 1] : 0;
+    acc.push(Number((previo + f.balance).toFixed(2)));
     return acc;
   }, []);
+
+  const etiquetas = filas.map((f) => f.etiqueta);
 
   const conteoInsights = filas.reduce<Record<string, number>>((acc, f) => {
     acc[f.insight] = (acc[f.insight] ?? 0) + 1;
@@ -109,291 +90,224 @@ export function DashboardPage({
   }, {});
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Kpi
-          label="Operaciones totales"
-          value={String(stats.totalOps)}
-          sub={`${stats.diasActivos} días activos`}
-        />
-        <Kpi
-          label="Tasa de éxito"
-          value={fmtTasa(stats.tasa)}
-          sub={`${stats.totalGan} ✓ · ${stats.totalPer} ✗`}
-          valueColor={colorTasa(stats.tasa)}
-        />
-        <Kpi
-          label="Balance de puntos"
-          value={fmtPuntos(stats.totalBal)}
-          sub={`+${stats.totalPtsPos.toFixed(2)} / −${stats.totalPtsNeg.toFixed(2)}`}
-          valueColor={colorSigno(stats.totalBal)}
-        />
-        <Kpi
-          label="Riesgo / beneficio"
-          value={fmtRatio(stats.rr)}
-          sub={`win ${stats.avgWin.toFixed(2)} · loss ${stats.avgLoss.toFixed(2)}`}
-          valueColor={colorRatio(stats.rr)}
-        />
-        <Kpi
-          label="Resultado (USD)"
-          value={fmtUsd(stats.resultadoUsd)}
-          sub={`Comisiones: −${fmtUsd(stats.comisiones)}`}
-          valueColor={colorSigno(stats.resultadoUsd)}
-        />
-        <Kpi
-          label="Retorno mensual"
-          value={`${stats.retornoPct >= 0 ? "+" : ""}${stats.retornoPct.toFixed(2)}%`}
-          sub={`Sobre ${fmtUsd(stats.balInicial)}`}
-          valueColor={colorSigno(stats.retornoPct)}
-        />
-      </div>
+    <div className="space-y-4">
+      <KpiStrip
+        items={[
+          {
+            label: "Operaciones",
+            value: String(stats.totalOps),
+            sub: `${stats.diasActivos} días activos`,
+            spark: filas.map((f) => f.ops),
+          },
+          {
+            label: "Tasa de éxito",
+            value: fmtTasa(stats.tasa),
+            sub: `${stats.totalGan} ✓ · ${stats.totalPer} ✗`,
+            valueColor: colorTasa(stats.tasa),
+            spark: filas.map((f) => f.tasa),
+          },
+          {
+            label: "Balance de puntos",
+            value: fmtPuntos(stats.totalBal),
+            sub: `+${stats.totalPtsPos.toFixed(2)} / −${stats.totalPtsNeg.toFixed(2)}`,
+            valueColor: colorSigno(stats.totalBal),
+            spark: equidad,
+          },
+          {
+            label: "Riesgo / beneficio",
+            value: fmtRatio(stats.rr),
+            sub: `win ${stats.avgWin.toFixed(2)} · loss ${stats.avgLoss.toFixed(2)}`,
+            valueColor: colorRatio(stats.rr),
+            spark: filas.map((f) => f.rr),
+          },
+          {
+            label: "Resultado (USD)",
+            value: fmtUsd(stats.resultadoUsd),
+            sub: `Comisiones: −${fmtUsd(stats.comisiones)}`,
+            valueColor: colorSigno(stats.resultadoUsd),
+          },
+          {
+            label: "Retorno mensual",
+            value: `${stats.retornoPct >= 0 ? "+" : ""}${stats.retornoPct.toFixed(2)}%`,
+            sub: `Sobre ${fmtUsd(stats.balInicial)}`,
+            valueColor: colorSigno(stats.retornoPct),
+          },
+        ]}
+      />
 
-      <Card>
-        <SectionLabel>Curva de equidad (puntos acumulados)</SectionLabel>
-        <ResponsiveContainer width="100%" height={260}>
-          <AreaChart data={equidad}>
-            <CartesianGrid stroke={ejes.grid} vertical={false} />
-            <XAxis dataKey="etiqueta" stroke={ejes.axis} fontSize={11} />
-            <YAxis stroke={ejes.axis} fontSize={11} />
-            <Tooltip contentStyle={tooltipStyle} formatter={fmtTooltip((v) => `${v.toFixed(2)} pts`, "Acumulado")} />
-            <ReferenceLine y={0} stroke={ejes.grid} />
-            <Area
-              type="monotone"
-              dataKey="acumulado"
-              stroke="var(--series-1)"
-              strokeWidth={2}
-              fill="var(--series-1)"
-              fillOpacity={0.12}
-              dot={{ r: 3 }}
-              name="Acumulado"
-            />
-          </AreaChart>
-        </ResponsiveContainer>
-      </Card>
+      <WidgetGrid>
+        <Widget
+          title="Curva de equidad"
+          meta="Puntos acumulados en el mes"
+          note="Acumula el saldo de puntos de cada día. Es la única vista donde se ve si el mes va sumando o devolviendo lo ganado."
+        >
+          <LineChart
+            area
+            labels={etiquetas}
+            series={[{ name: "Acumulado", color: CHART_COLOR.accent, values: equidad }]}
+            fmt={(v) => fmtPuntos(v, 0)}
+            height={250}
+          />
+        </Widget>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <SectionLabel>Operaciones por día</SectionLabel>
-          <ResponsiveContainer width="100%" height={230}>
-            <BarChart data={filas}>
-              <CartesianGrid stroke={ejes.grid} vertical={false} />
-              <XAxis dataKey="etiqueta" stroke={ejes.axis} fontSize={11} />
-              <YAxis stroke={ejes.axis} fontSize={11} />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <ReferenceLine y={0} stroke={ejes.grid} />
-              <Bar
-                dataKey="ganadoras"
-                name="Ganadoras"
-                fill="var(--series-3)"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey="perdedoras"
-                name="Perdedoras"
-                fill="var(--series-8)"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+        <Widget title="Operaciones por día" span={6}>
+          <ComboChart
+            data={filas.map((f) => ({
+              label: f.etiqueta,
+              values: [f.ganadoras, f.perdedoras],
+            }))}
+            keys={["Ganadoras", "Perdedoras"]}
+            colors={[CHART_COLOR.win, CHART_COLOR.loss]}
+            fmt={(v) => String(Math.round(v))}
+          />
+          <ChartLegend
+            items={[
+              { label: "Ganadoras", color: CHART_COLOR.win },
+              { label: "Perdedoras", color: CHART_COLOR.loss },
+            ]}
+          />
+        </Widget>
 
-        <Card>
-          <SectionLabel>Tasa de éxito por día (%)</SectionLabel>
-          <ResponsiveContainer width="100%" height={230}>
-            <BarChart data={filas}>
-              <CartesianGrid stroke={ejes.grid} vertical={false} />
-              <XAxis dataKey="etiqueta" stroke={ejes.axis} fontSize={11} />
-              <YAxis stroke={ejes.axis} fontSize={11} domain={[0, 110]} />
-              <Tooltip
-                contentStyle={tooltipStyle}
-                formatter={fmtTooltip((v) => `${v.toFixed(1)}%`, "Tasa")}
-              />
-              <ReferenceLine
-                y={50}
-                stroke="var(--status-good)"
-                strokeDasharray="3 3"
-                label={{ value: "50%", fill: "var(--text-muted)", fontSize: 10, position: "right" }}
-              />
-              <ReferenceLine
-                y={40}
-                stroke="var(--status-warning)"
-                strokeDasharray="3 3"
-                label={{ value: "40%", fill: "var(--text-muted)", fontSize: 10, position: "right" }}
-              />
-              <Bar dataKey="tasa" name="Tasa" radius={[4, 4, 0, 0]}>
-                {filas.map((f) => (
-                  <Cell key={f.fecha} fill={colorTasa(f.tasa)} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
+        <Widget
+          title="Tasa de éxito por día"
+          meta="%"
+          span={6}
+          note="El color de cada barra es el veredicto del día: verde por encima del 50 %, ámbar entre 40 y 50, rojo por debajo."
+        >
+          <ComboChart
+            data={filas.map((f) => ({ label: f.etiqueta, values: [f.tasa] }))}
+            keys={["Tasa"]}
+            colors={[CHART_COLOR.accent]}
+            barColorFn={(i) => colorTasa(filas[i].tasa)}
+            axisMax={100}
+            fmt={(v) => `${v.toFixed(0)}%`}
+            refLines={[
+              { value: 50, label: "50 % objetivo", color: "var(--status-good)" },
+              { value: 40, label: "40 % mínimo", color: "var(--status-warning)" },
+            ]}
+          />
+        </Widget>
 
-        <Card>
-          <SectionLabel>Ratio riesgo / beneficio</SectionLabel>
-          <ResponsiveContainer width="100%" height={230}>
-            <LineChart data={filas}>
-              <CartesianGrid stroke={ejes.grid} vertical={false} />
-              <XAxis dataKey="etiqueta" stroke={ejes.axis} fontSize={11} />
-              <YAxis stroke={ejes.axis} fontSize={11} />
-              <Tooltip
-                contentStyle={tooltipStyle}
-                formatter={fmtTooltip((v) => v.toFixed(2), "R/B")}
-              />
-              <ReferenceLine
-                y={1.5}
-                stroke="var(--status-good)"
-                strokeDasharray="3 3"
-                label={{
-                  value: "1.5 objetivo",
-                  fill: "var(--text-muted)",
-                  fontSize: 10,
-                  position: "right",
-                }}
-              />
-              <ReferenceLine y={1} stroke="var(--status-warning)" strokeDasharray="3 3" />
-              <Line
-                type="monotone"
-                dataKey="rr"
-                name="R/B"
-                stroke="var(--series-7)"
-                strokeWidth={2}
-                dot={{ r: 4 }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </Card>
+        <Widget
+          title="Ratio riesgo / beneficio"
+          span={6}
+          note="Cuánto se gana por cada punto perdido. Por debajo de 1 el mes pierde dinero aunque la tasa de acierto sea alta."
+        >
+          <LineChart
+            labels={etiquetas}
+            series={[{ name: "R/B", color: CHART_COLOR.comparison, values: filas.map((f) => f.rr) }]}
+            fmt={(v) => v.toFixed(1)}
+            refLines={[
+              { value: 1.5, label: "1,5 objetivo", color: "var(--status-good)" },
+              { value: 1, label: "1 mínimo", color: "var(--status-warning)" },
+            ]}
+          />
+        </Widget>
 
-        <Card>
-          <SectionLabel>Distribución de puntos</SectionLabel>
-          <ResponsiveContainer width="100%" height={230}>
-            <BarChart data={filas} stackOffset="sign">
-              <CartesianGrid stroke={ejes.grid} vertical={false} />
-              <XAxis dataKey="etiqueta" stroke={ejes.axis} fontSize={11} />
-              <YAxis stroke={ejes.axis} fontSize={11} />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <ReferenceLine y={0} stroke={ejes.grid} />
-              <Bar
-                dataKey="ptsPos"
-                name="Pts +"
-                fill="var(--series-3)"
-                stackId="pts"
-                radius={[4, 4, 0, 0]}
-              />
-              <Bar
-                dataKey={(f: FilaDia) => -f.ptsNeg}
-                name="Pts −"
-                fill="var(--series-8)"
-                stackId="pts"
-                radius={[0, 0, 4, 4]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
-      </div>
+        <Widget
+          title="Distribución de puntos"
+          meta="A favor arriba, en contra abajo"
+          span={6}
+          note="Los dos brutos del mismo día en una sola columna partida por el cero: el saldo neto se ve sin restar mentalmente."
+        >
+          <DivergingStackedChart
+            data={filas.map((f) => ({
+              label: f.etiqueta,
+              positive: f.ptsPos,
+              negative: f.ptsNeg,
+            }))}
+            fmt={(v) => v.toFixed(0)}
+            positiveLabel="Puntos a favor"
+            negativeLabel="Puntos en contra"
+          />
+        </Widget>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <Card>
+        <Widget title="Tasa de éxito global" span={4}>
           <Gauge
-            label="Tasa de éxito global"
+            label="Objetivo 50 %"
             valor={stats.tasa}
             max={100}
             color={colorTasa(stats.tasa)}
             formato={(v) => `${v.toFixed(1)}%`}
           />
-        </Card>
-        <Card>
+        </Widget>
+
+        <Widget title="Ratio R/B" span={4}>
           <Gauge
-            label="Ratio R/B"
+            label="Objetivo 1,5"
             valor={stats.rr}
             max={5}
             color={colorRatio(stats.rr)}
             formato={(v) => v.toFixed(2)}
           />
-        </Card>
-        <Card>
-          <SectionLabel>Ganadoras vs perdedoras</SectionLabel>
-          <ResponsiveContainer width="100%" height={180}>
-            <PieChart>
-              <Pie
-                data={[
-                  { name: "Ganadoras", value: stats.totalGan },
-                  { name: "Perdedoras", value: stats.totalPer },
-                ]}
-                dataKey="value"
-                innerRadius={45}
-                outerRadius={70}
-                paddingAngle={2}
-                stroke="var(--surface-1)"
-                strokeWidth={2}
-              >
-                <Cell fill="var(--series-3)" />
-                <Cell fill="var(--series-8)" />
-              </Pie>
-              <Tooltip contentStyle={tooltipStyle} />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-            </PieChart>
-          </ResponsiveContainer>
-        </Card>
-      </div>
+        </Widget>
 
-      <Card>
-        <SectionLabel>Detalle diario</SectionLabel>
-        <Tabla>
-          <thead>
-            <tr className="border-b border-[var(--border)] text-xs text-[var(--text-muted)]">
-              <Th>Fecha</Th>
-              <Th>Ops</Th>
-              <Th>Gan.</Th>
-              <Th>Perd.</Th>
-              <Th>Pts +</Th>
-              <Th>Pts −</Th>
-              <Th>Balance</Th>
-              <Th>Tasa</Th>
-              <Th>R/B</Th>
-              <Th>Insight</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {filas.map((f) => (
-              <tr key={f.fecha} className="border-b border-[var(--border)] last:border-0">
-                <Td>{f.etiqueta}</Td>
-                <Td>{f.ops}</Td>
-                <Td>{f.ganadoras}</Td>
-                <Td>{f.perdedoras}</Td>
-                <Td>{f.ptsPos.toFixed(2)}</Td>
-                <Td>{f.ptsNeg.toFixed(2)}</Td>
-                <Td className="font-semibold" >
-                  <span style={{ color: colorSigno(f.balance) }}>{fmtPuntos(f.balance)}</span>
-                </Td>
-                <Td>{fmtTasa(f.tasa)}</Td>
-                <Td>{fmtRatio(f.rr)}</Td>
-                <td className="py-1.5">
-                  <ChipInsight insight={f.insight} />
-                </td>
+        <Widget title="Ganadoras vs perdedoras" span={4}>
+          <DonutChart
+            data={[
+              { label: "Ganadoras", value: stats.totalGan, color: CHART_COLOR.win },
+              { label: "Perdedoras", value: stats.totalPer, color: CHART_COLOR.loss },
+            ]}
+            centerLabel={String(stats.totalOps)}
+            centerSub="operaciones"
+            fmt={(v) => String(Math.round(v))}
+          />
+        </Widget>
+
+        <Widget title="Detalle diario" meta={`${filas.length} días con operaciones`}>
+          <Tabla>
+            <thead>
+              <tr>
+                <Th num={false}>Fecha</Th>
+                <Th num>Ops</Th>
+                <Th num>Gan.</Th>
+                <Th num>Perd.</Th>
+                <Th num>Pts +</Th>
+                <Th num>Pts −</Th>
+                <Th num>Balance</Th>
+                <Th num>Tasa</Th>
+                <Th num>R/B</Th>
+                <Th num={false}>Insight</Th>
               </tr>
-            ))}
-          </tbody>
-        </Tabla>
-      </Card>
+            </thead>
+            <tbody>
+              {filas.map((f) => (
+                <tr key={f.fecha}>
+                  <Td num={false}>{f.etiqueta}</Td>
+                  <Td>{f.ops}</Td>
+                  <Td>{f.ganadoras}</Td>
+                  <Td>{f.perdedoras}</Td>
+                  <Td>{f.ptsPos.toFixed(2)}</Td>
+                  <Td>{f.ptsNeg.toFixed(2)}</Td>
+                  <Td className="font-semibold">
+                    <span style={{ color: colorSigno(f.balance) }}>{fmtPuntos(f.balance)}</span>
+                  </Td>
+                  <Td>{fmtTasa(f.tasa)}</Td>
+                  <Td>{fmtRatio(f.rr)}</Td>
+                  <td>
+                    <ChipInsight insight={f.insight} />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </Tabla>
+        </Widget>
 
-      <Card>
-        <SectionLabel>Análisis de insights</SectionLabel>
-        <div className="flex flex-wrap gap-3">
-          {Object.entries(conteoInsights)
-            .sort((a, b) => b[1] - a[1])
-            .map(([insight, n]) => (
-              <div key={insight} className="flex items-center gap-2">
-                <ChipInsight insight={insight as FilaDia["insight"]} />
-                <span className="font-mono text-xs text-[var(--text-secondary)]">
-                  {n} {n === 1 ? "día" : "días"}
-                </span>
-              </div>
-            ))}
-        </div>
-      </Card>
+        <Widget title="Análisis de insights" meta="Cuántos días cayó en cada diagnóstico">
+          <div className="flex flex-wrap gap-3">
+            {Object.entries(conteoInsights)
+              .sort((a, b) => b[1] - a[1])
+              .map(([insight, n]) => (
+                <div key={insight} className="flex items-center gap-2">
+                  <ChipInsight insight={insight as FilaDia["insight"]} />
+                  <span className="font-mono text-[length:var(--text-sm)] text-[var(--text-secondary)]">
+                    {n} {n === 1 ? "día" : "días"}
+                  </span>
+                </div>
+              ))}
+          </div>
+        </Widget>
+      </WidgetGrid>
     </div>
   );
 }

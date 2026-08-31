@@ -1,47 +1,28 @@
 "use client";
 
-import {
-  Area,
-  AreaChart,
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ReferenceLine,
-  ResponsiveContainer,
-  Scatter,
-  ScatterChart,
-  Tooltip,
-  XAxis,
-  YAxis,
-  ZAxis,
-} from "recharts";
 import { MESES, getStatsMes, type ConfigMes, type StatsMes } from "@/lib/trading/calc";
 import { CONFIG_POR_DEFECTO, type MapaDias } from "@/lib/trading/data";
 import {
+  CHART_COLOR,
   Card,
-  Kpi,
-  SectionLabel,
+  ComboChart,
+  KpiStrip,
+  LineChart,
+  QuadrantChart,
   Tabla,
   Td,
   Th,
+  VarianceChart,
+  Widget,
+  WidgetGrid,
   colorRatio,
   colorSigno,
   colorTasa,
   fmtPuntos,
   fmtRatio,
   fmtTasa,
-  fmtTooltip,
   fmtUsd,
 } from "../ui";
-
-const ejes = { grid: "var(--border)", axis: "var(--text-muted)" };
-const tooltipStyle = {
-  background: "var(--surface-2)",
-  border: "1px solid var(--border)",
-  borderRadius: 6,
-  fontSize: 12,
-} as const;
 
 interface FilaMes extends StatsMes {
   mes: number;
@@ -72,7 +53,7 @@ export function AnualPage({
   if (porMes.length === 0) {
     return (
       <Card>
-        <p className="text-sm text-[var(--text-secondary)]">
+        <p className="text-[length:var(--text-md)] text-[var(--text-secondary)]">
           No hay datos registrados todavía. Empieza en <b>Registro</b>.
         </p>
       </Card>
@@ -87,220 +68,167 @@ export function AnualPage({
   const rrPromedio = porMes.reduce((a, m) => a + m.rr, 0) / porMes.length;
 
   // Acumulado mes a mes con reduce, sin reasignar durante el render.
-  const equidad = porMes.reduce<{ nombre: string; acumulado: number }[]>((acc, m) => {
-    const previo = acc.length > 0 ? acc[acc.length - 1].acumulado : 0;
-    acc.push({ nombre: m.nombre, acumulado: Number((previo + m.totalBal).toFixed(2)) });
+  const equidad = porMes.reduce<number[]>((acc, m) => {
+    const previo = acc.length > 0 ? acc[acc.length - 1] : 0;
+    acc.push(Number((previo + m.totalBal).toFixed(2)));
     return acc;
   }, []);
 
+  const nombres = porMes.map((m) => m.nombre);
+
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        <Kpi
-          label="Operaciones totales"
-          value={totalOps.toLocaleString("es")}
-          sub={`${porMes.length} ${porMes.length === 1 ? "mes activo" : "meses activos"}`}
-        />
-        <Kpi
-          label="Tasa de éxito anual"
-          value={fmtTasa(tasaAnual)}
-          sub={`${totalGan} ganadoras`}
-          valueColor={colorTasa(tasaAnual)}
-        />
-        <Kpi
-          label="Balance de puntos"
-          value={fmtPuntos(totalBal)}
-          sub={fmtUsd(totalUsd)}
-          valueColor={colorSigno(totalBal)}
-        />
-        <Kpi
-          label="Ratio R/B promedio"
-          value={fmtRatio(rrPromedio)}
-          valueColor={colorRatio(rrPromedio)}
-        />
-      </div>
+    <div className="space-y-4">
+      <KpiStrip
+        items={[
+          {
+            label: "Operaciones",
+            value: totalOps.toLocaleString("es"),
+            sub: `${porMes.length} ${porMes.length === 1 ? "mes activo" : "meses activos"}`,
+            spark: porMes.map((m) => m.totalOps),
+          },
+          {
+            label: "Tasa de éxito anual",
+            value: fmtTasa(tasaAnual),
+            sub: `${totalGan} ganadoras`,
+            valueColor: colorTasa(tasaAnual),
+            spark: porMes.map((m) => m.tasa),
+          },
+          {
+            label: "Balance de puntos",
+            value: fmtPuntos(totalBal),
+            sub: fmtUsd(totalUsd),
+            valueColor: colorSigno(totalBal),
+            spark: equidad,
+          },
+          {
+            label: "Ratio R/B promedio",
+            value: fmtRatio(rrPromedio),
+            sub: "Promedio de los meses activos",
+            valueColor: colorRatio(rrPromedio),
+            spark: porMes.map((m) => m.rr),
+          },
+        ]}
+      />
 
-      <Card>
-        <SectionLabel>Balance de puntos por mes</SectionLabel>
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={porMes}>
-            <CartesianGrid stroke={ejes.grid} vertical={false} />
-            <XAxis dataKey="nombre" stroke={ejes.axis} fontSize={11} />
-            <YAxis stroke={ejes.axis} fontSize={11} />
-            <Tooltip
-              contentStyle={tooltipStyle}
-              formatter={fmtTooltip((v) => `${v.toFixed(2)} pts`, "Balance")}
-            />
-            <ReferenceLine y={0} stroke={ejes.grid} />
-            <Bar dataKey="totalBal" name="Balance" radius={[4, 4, 0, 0]}>
-              {porMes.map((m) => (
-                <Cell key={m.mes} fill={colorSigno(m.totalBal)} />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
+      <WidgetGrid>
+        <Widget
+          title="Balance de puntos por mes"
+          meta="Saldo neto del mes, no acumulado"
+          note="Cada barra es el mes por separado. Para ver si el año va sumando, la lectura es la curva de equidad."
+        >
+          <VarianceChart
+            values={porMes.map((m) => m.totalBal)}
+            labels={nombres}
+            fmt={(v) => v.toFixed(0)}
+          />
+        </Widget>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Card>
-          <SectionLabel>Curva de equidad acumulada</SectionLabel>
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={equidad}>
-              <CartesianGrid stroke={ejes.grid} vertical={false} />
-              <XAxis dataKey="nombre" stroke={ejes.axis} fontSize={11} />
-              <YAxis stroke={ejes.axis} fontSize={11} />
-              <Tooltip
-                contentStyle={tooltipStyle}
-                formatter={fmtTooltip((v) => `${v.toFixed(2)} pts`, "Acumulado")}
-              />
-              <ReferenceLine y={0} stroke={ejes.grid} />
-              <Area
-                type="monotone"
-                dataKey="acumulado"
-                stroke="var(--series-1)"
-                strokeWidth={2}
-                fill="var(--series-1)"
-                fillOpacity={0.12}
-                dot={{ r: 4 }}
-                name="Acumulado"
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </Card>
+        <Widget
+          title="Curva de equidad acumulada"
+          meta="Puntos, mes a mes"
+          span={6}
+          note="Suma corrida de los saldos mensuales. Es lo que dice si el año avanza o devuelve."
+        >
+          <LineChart
+            area
+            labels={nombres}
+            series={[{ name: "Acumulado", color: CHART_COLOR.accent, values: equidad }]}
+            fmt={(v) => fmtPuntos(v, 0)}
+            every={1}
+          />
+        </Widget>
 
-        <Card>
-          <SectionLabel>Tasa de éxito por mes (%)</SectionLabel>
-          <ResponsiveContainer width="100%" height={240}>
-            <BarChart data={porMes}>
-              <CartesianGrid stroke={ejes.grid} vertical={false} />
-              <XAxis dataKey="nombre" stroke={ejes.axis} fontSize={11} />
-              <YAxis stroke={ejes.axis} fontSize={11} domain={[0, 110]} />
-              <Tooltip
-                contentStyle={tooltipStyle}
-                formatter={fmtTooltip((v) => `${v.toFixed(1)}%`, "Tasa")}
-              />
-              <ReferenceLine
-                y={50}
-                stroke="var(--status-good)"
-                strokeDasharray="3 3"
-                label={{
-                  value: "50% meta",
-                  fill: "var(--text-muted)",
-                  fontSize: 10,
-                  position: "right",
-                }}
-              />
-              <Bar dataKey="tasa" name="Tasa" radius={[4, 4, 0, 0]}>
-                {porMes.map((m) => (
-                  <Cell key={m.mes} fill={colorTasa(m.tasa)} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </Card>
-      </div>
+        <Widget
+          title="Tasa de éxito por mes"
+          meta="%"
+          span={6}
+          note="Verde por encima del 50 %, ámbar entre 40 y 50, rojo por debajo."
+        >
+          <ComboChart
+            data={porMes.map((m) => ({ label: m.nombre, values: [m.tasa] }))}
+            keys={["Tasa"]}
+            colors={[CHART_COLOR.accent]}
+            barColorFn={(i) => colorTasa(porMes[i].tasa)}
+            axisMax={100}
+            fmt={(v) => `${v.toFixed(0)}%`}
+            refLines={[{ value: 50, label: "50 % objetivo", color: "var(--status-good)" }]}
+          />
+        </Widget>
 
-      <Card>
-        <SectionLabel>Tasa de éxito vs ratio R/B</SectionLabel>
-        <p className="mb-2 text-xs text-[var(--text-secondary)]">
-          Zona ideal: tasa por encima de 50 % y R/B por encima de 1,5. El color indica si el
-          balance del mes fue a favor o en contra.
-        </p>
-        <ResponsiveContainer width="100%" height={300}>
-          <ScatterChart margin={{ top: 10, right: 20, bottom: 20, left: 0 }}>
-            <CartesianGrid stroke={ejes.grid} />
-            <XAxis
-              type="number"
-              dataKey="tasa"
-              name="Tasa"
-              unit="%"
-              stroke={ejes.axis}
-              fontSize={11}
-              domain={[0, 100]}
-              label={{
-                value: "Tasa de éxito (%)",
-                position: "insideBottom",
-                offset: -10,
-                fill: "var(--text-muted)",
-                fontSize: 11,
-              }}
-            />
-            <YAxis
-              type="number"
-              dataKey="rr"
-              name="R/B"
-              stroke={ejes.axis}
-              fontSize={11}
-              label={{
-                value: "Ratio R/B",
-                angle: -90,
-                position: "insideLeft",
-                fill: "var(--text-muted)",
-                fontSize: 11,
-              }}
-            />
-            <ZAxis range={[140, 140]} />
-            <Tooltip
-              contentStyle={tooltipStyle}
-              cursor={{ strokeDasharray: "3 3" }}
-              formatter={(v, n) => [
-                n === "Tasa" ? `${Number(v).toFixed(1)}%` : Number(v).toFixed(2),
-                String(n),
-              ]}
-              labelFormatter={() => ""}
-            />
-            <ReferenceLine x={50} stroke="var(--status-good)" strokeDasharray="3 3" />
-            <ReferenceLine y={1.5} stroke="var(--series-7)" strokeDasharray="3 3" />
-            <Scatter data={porMes} name="Meses">
-              {porMes.map((m) => (
-                <Cell key={m.mes} fill={colorSigno(m.totalBal)} />
-              ))}
-            </Scatter>
-          </ScatterChart>
-        </ResponsiveContainer>
-        {/* Identidad de cada punto sin depender del color: el scatter no lleva
-            leyenda porque los meses ya están nombrados en la tabla de abajo. */}
-      </Card>
+        <Widget
+          title="Tasa de éxito vs ratio R/B"
+          meta="Un punto por mes"
+          note={
+            <>
+              La zona ideal es arriba a la derecha: acierto por encima del 50 %{" "}
+              <em>y</em> R/B por encima de 1,5. El color dice si el balance del mes fue a favor o
+              en contra — un mes puede caer en zona buena y aun así perder puntos, y eso es
+              justo lo que hay que ver.
+            </>
+          }
+        >
+          <QuadrantChart
+            points={porMes.map((m) => ({
+              label: m.nombre.slice(0, 3),
+              x: m.tasa,
+              y: m.rr,
+              color: colorSigno(m.totalBal),
+            }))}
+            xLabel="Tasa de éxito (%)"
+            yLabel="Ratio R/B"
+            xFmt={(v) => `${v.toFixed(0)}%`}
+            yFmt={(v) => v.toFixed(1)}
+            xDomain={[0, 100]}
+            xDivider={50}
+            yDivider={1.5}
+            quadrantLabels={{
+              q1: "acierto y ratio en objetivo",
+              q2: "buen ratio, poco acierto",
+              q3: "los dos por debajo",
+              q4: "mucho acierto, ratio corto",
+            }}
+          />
+        </Widget>
 
-      <Card>
-        <SectionLabel>Comparativa mensual</SectionLabel>
-        <Tabla>
-          <thead>
-            <tr className="border-b border-[var(--border)] text-xs text-[var(--text-muted)]">
-              <Th>Mes</Th>
-              <Th>Ops</Th>
-              <Th>Gan.</Th>
-              <Th>Perd.</Th>
-              <Th>Tasa</Th>
-              <Th>Balance pts</Th>
-              <Th>R/B</Th>
-              <Th>Resultado USD</Th>
-            </tr>
-          </thead>
-          <tbody>
-            {porMes.map((m) => (
-              <tr key={m.mes} className="border-b border-[var(--border)] last:border-0">
-                <td className="py-1.5">{m.nombre}</td>
-                <Td>{m.totalOps}</Td>
-                <Td>{m.totalGan}</Td>
-                <Td>{m.totalPer}</Td>
-                <Td>
-                  <span style={{ color: colorTasa(m.tasa) }}>{fmtTasa(m.tasa)}</span>
-                </Td>
-                <Td>
-                  <span style={{ color: colorSigno(m.totalBal) }}>{fmtPuntos(m.totalBal)}</span>
-                </Td>
-                <Td>{fmtRatio(m.rr)}</Td>
-                <Td>
-                  <span style={{ color: colorSigno(m.resultadoUsd) }}>
-                    {fmtUsd(m.resultadoUsd)}
-                  </span>
-                </Td>
+        <Widget title="Comparativa mensual">
+          <Tabla>
+            <thead>
+              <tr>
+                <Th num={false}>Mes</Th>
+                <Th num>Ops</Th>
+                <Th num>Gan.</Th>
+                <Th num>Perd.</Th>
+                <Th num>Tasa</Th>
+                <Th num>Balance pts</Th>
+                <Th num>R/B</Th>
+                <Th num>Resultado USD</Th>
               </tr>
-            ))}
-          </tbody>
-        </Tabla>
-      </Card>
+            </thead>
+            <tbody>
+              {porMes.map((m) => (
+                <tr key={m.mes}>
+                  <Td num={false}>{m.nombre}</Td>
+                  <Td>{m.totalOps}</Td>
+                  <Td>{m.totalGan}</Td>
+                  <Td>{m.totalPer}</Td>
+                  <Td>
+                    <span style={{ color: colorTasa(m.tasa) }}>{fmtTasa(m.tasa)}</span>
+                  </Td>
+                  <Td>
+                    <span style={{ color: colorSigno(m.totalBal) }}>{fmtPuntos(m.totalBal)}</span>
+                  </Td>
+                  <Td>{fmtRatio(m.rr)}</Td>
+                  <Td>
+                    <span style={{ color: colorSigno(m.resultadoUsd) }}>
+                      {fmtUsd(m.resultadoUsd)}
+                    </span>
+                  </Td>
+                </tr>
+              ))}
+            </tbody>
+          </Tabla>
+        </Widget>
+      </WidgetGrid>
     </div>
   );
 }

@@ -9,16 +9,57 @@
 // que no sube al paquete compartido.
 "use client";
 
-export { Card, SectionLabel, Kpi, fmtUsd } from "@camilo-apps/ui";
+import type { ReactNode } from "react";
+
+export { Card, Widget, WidgetGrid, SectionLabel, KpiStrip, fmtUsd } from "@camilo-apps/ui";
+export {
+  CHART_COLOR,
+  ChartLegend,
+  ComboChart,
+  DonutChart,
+  Gauge,
+  LineChart,
+} from "@camilo-apps/ui";
+
+/** Tabla con la misma gramática que el Tracker: cabecera en versalitas, cifras tabulares. */
+export function Tabla({ children }: { children: ReactNode }) {
+  return (
+    <div className="cj-table-wrap">
+      <table>{children}</table>
+    </div>
+  );
+}
+
+export function Th({
+  children,
+  num = false,
+  className = "",
+}: {
+  children: ReactNode;
+  num?: boolean;
+  className?: string;
+}) {
+  return <th className={`${num ? "is-num" : ""} ${className}`}>{children}</th>;
+}
+
+export function Td({
+  children,
+  num = true,
+  className = "",
+}: {
+  children: ReactNode;
+  num?: boolean;
+  className?: string;
+}) {
+  return <td className={`${num ? "is-num" : ""} ${className}`}>{children}</td>;
+}
 
 export function Badge({ status }: { status: "pass" | "fail" }) {
-  const styles =
-    status === "pass"
-      ? "bg-[var(--status-good)]/12 text-[var(--status-good)] border-[var(--status-good)]/30"
-      : "bg-[var(--status-critical)]/12 text-[var(--status-critical)] border-[var(--status-critical)]/30";
+  const color = status === "pass" ? "var(--status-good)" : "var(--status-critical)";
   return (
     <span
-      className={`rounded-full border px-2.5 py-0.5 font-mono text-xs font-bold tracking-wide ${styles}`}
+      className="cj-chip font-mono"
+      style={{ color, borderColor: `${color}4d`, background: `${color}1f` }}
     >
       {status === "pass" ? "PASS" : "FAIL"}
     </span>

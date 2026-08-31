@@ -1,68 +1,150 @@
 /*
- * Sistema de diseño compartido — dark-first, para las apps financieras de
- * Camilo Jiménez (Screener y Trading Tracker).
+ * Sistema de diseño compartido — Screener y Trading Tracker de Camilo Jiménez.
  *
- * Paleta validada por la skill dataviz (references/palette.md): categórica
- * fija sin ciclar, secuencial azul, divergente azul<->rojo, estado fijo.
- * Dark es el modo por defecto; light queda como alternativa.
+ * ── De dónde sale la paleta ─────────────────────────────────────────────────
+ * Extraída en vivo (2026-08-30) de las custom properties de sus cuatro landings
+ * — /metodocapitalinteligente/, /tradingavanzadodealtorendimiento/,
+ * /thecapitaldeskpremium/ y /mentorias/ —, que comparten exactamente los mismos
+ * valores: fondo #0A0A0A, tarjeta #161616, oro #C9A84C, texto #F5F5F5.
  *
- * Vive aquí y no en cada app para que las dos no se desincronicen: si un color
- * cambia, cambia en un solo sitio.
+ * El home usa una variante casi idéntica con el negro tirando a azul (#0B0E15)
+ * y un oro un punto distinto (#C8A24E). Se adopta la de las landings: son
+ * cuatro contra una, y el negro neutro es lo que la línea editorial describe
+ * como "gris oscuro minimalista".
+ *
+ * OJO: `Core Marca Personal Camilo` en la bóveda dice "sin dorado". Su sitio en
+ * vivo es oro en las cinco páginas. La nota está desactualizada, no esto.
+ *
+ * ── De dónde salen las escalas ──────────────────────────────────────────────
+ * Las escalas tipográficas, de espaciado y de radio vienen de marketing-app
+ * (`apps/web/app/globals.css`), para que los gráficos portados desde allí
+ * conserven sus proporciones sin retocarlas una por una.
+ *
+ * ── Disciplina de color en datos ────────────────────────────────────────────
+ * Categórica de orden fijo, nunca ciclada. Estado (bueno/malo) con su propia
+ * rampa, nunca reutilizada como identidad de serie. Divergente con gris neutro
+ * al medio, nunca un tono.
+ *
+ * Vive aquí y no en cada app para que las dos no se desincronicen.
  */
 :root {
   color-scheme: dark;
-  --surface-0: #0b0d10;
-  --surface-1: #14171b;
-  --surface-2: #1b1f24;
-  --border: #262b31;
-  --text-primary: #f4f5f6;
-  --text-secondary: #b7bcc3;
-  --text-muted: #7a828c;
 
-  /* Categórico — orden fijo, nunca ciclado */
-  --series-1: #3987e5; /* blue */
-  --series-2: #d95926; /* orange */
-  --series-3: #199e70; /* aqua */
-  --series-4: #c98500; /* yellow */
+  /* ── Superficies (de las landings) ─────────────────────────────────────── */
+  --surface-0: #0a0a0a; /* lienzo */
+  --surface-1: #161616; /* tarjeta, barra lateral */
+  --surface-2: #1c1c1c; /* inputs, sub-paneles, hover */
+  --border: #242424;
+
+  /* ── Texto (de las landings) ───────────────────────────────────────────── */
+  --text-primary: #f5f5f5;
+  --text-secondary: #a0a3b1;
+  --text-muted: #6c6f7e;
+
+  /* ── Marca: el oro ─────────────────────────────────────────────────────── */
+  --gold: #c9a84c;
+  --gold-light: #e8d48b;
+  --gold-pale: #f0dda3;
+  --gold-dark: #a07c1c;
+  --gold-border: rgba(201, 168, 76, 0.2);
+  --gold-soft: rgba(201, 168, 76, 0.08);
+
+  /*
+   * Categórico — orden fijo, nunca ciclado.
+   * La serie 1 es el oro: la primera serie de cualquier gráfico es la marca.
+   * Las series 3 y 8 se eligieron para que se lean como "a favor" y "en
+   * contra" sin ser los colores de estado, porque el Tracker las usa para
+   * ganadoras/perdedoras y ahí el color carga significado.
+   */
+  --series-1: #c9a84c; /* oro — marca */
+  --series-2: #6da7ec; /* azul */
+  --series-3: #3fa987; /* verde aqua — lee "a favor" */
+  --series-4: #e8d48b; /* oro claro */
   --series-5: #d55181; /* magenta */
-  --series-6: #008300; /* green */
-  --series-7: #9085e9; /* violet */
-  --series-8: #e66767; /* red */
+  --series-6: #7fb069; /* verde oliva */
+  --series-7: #9085e9; /* violeta */
+  --series-8: #e06666; /* rojo suave — lee "en contra" */
 
-  /* Secuencial (azul, claro->oscuro) */
-  --seq-100: #cde2fb;
-  --seq-300: #6da7ec;
-  --seq-500: #256abf;
-  --seq-700: #0d366b;
+  /* Secuencial (oro, claro -> oscuro) */
+  --seq-100: #f0dda3;
+  --seq-300: #d9bc6b;
+  --seq-500: #a07c1c;
+  --seq-700: #5c4610;
 
   /* Divergente — dos polos + gris neutro al medio, nunca un tono en el centro */
-  --div-cold: #3987e5;
-  --div-mid: #383835;
-  --div-warm: #e66767;
+  --div-cold: #6da7ec;
+  --div-mid: #3a3a38;
+  --div-warm: #e06666;
 
-  /* Estado — fijo, nunca reusado como serie */
-  --status-good: #0ca30c;
+  /* Estado — fijo, nunca reusado como serie. Verde y rojo son los del sitio. */
+  --status-good: #22c55e;
   --status-warning: #fab219;
   --status-serious: #ec835a;
-  --status-critical: #d03b3b;
-}
+  --status-critical: #ef4444;
 
-:root[data-theme="light"] {
-  color-scheme: light;
-  --surface-0: #fcfcfb;
-  --surface-1: #ffffff;
-  --surface-2: #f0efec;
-  --border: #dedcd6;
-  --text-primary: #0b0b0b;
-  --text-secondary: #52514e;
-  --text-muted: #83817a;
+  /* ── Tipografía ────────────────────────────────────────────────────────── */
+  --font-display: var(--font-fraunces), Georgia, "Times New Roman", serif;
+  --font-sans: var(--font-outfit), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", monospace;
 
-  --series-1: #2a78d6;
-  --series-2: #eb6834;
-  --series-3: #1baf7a;
-  --series-4: #eda100;
-  --series-5: #e87ba4;
-  --series-6: #008300;
-  --series-7: #4a3aa7;
-  --series-8: #e34948;
+  /*
+   * Escala de marketing-app. Es deliberadamente pequeña: un dashboard denso se
+   * lee mejor con muchos datos a tamaño contenido que con pocos a tamaño grande.
+   */
+  --text-3xs: 0.64rem;
+  --text-2xs: 0.69rem;
+  --text-xs: 0.74rem;
+  --text-sm: 0.79rem;
+  --text-base: 0.84rem;
+  --text-md: 0.89rem;
+  --text-lg: 0.94rem;
+  --text-title-sm: 1rem;
+  --text-title-md: 1.125rem;
+  --text-title-lg: 1.25rem;
+  --text-kpi-md: 1.5rem;
+  --text-kpi-lg: 1.75rem;
+  --text-kpi-hero: 2.25rem;
+  --text-page-title: 2.45rem;
+
+  /* ── Espaciado, radios, movimiento ─────────────────────────────────────── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+
+  /* Radios del sitio (--r-sm/md/lg). */
+  --radius-control: 8px;
+  --radius-card: 14px;
+  --radius-lg: 20px;
+
+  --control-h-sm: 2.1rem;
+  --control-h-md: 2.75rem;
+  --transition-interaction: 180ms ease;
+  --shadow-overlay: 0 18px 40px rgba(0, 0, 0, 0.45);
+
+  /*
+   * ── Alias para los gráficos portados desde marketing-app ────────────────
+   * `svg-chart.tsx` se escribió contra los nombres --color-*. Se aliasan aquí
+   * en vez de reescribir 600 líneas de gráfico: si mañana cambia el oro, sigue
+   * cambiando en un solo sitio, y el diff del port queda legible.
+   */
+  --color-canvas: var(--surface-0);
+  --color-surface: var(--surface-1);
+  --color-surface-hover: var(--surface-2);
+  --color-border: var(--border);
+  --color-text: var(--text-primary);
+  --color-text-muted: var(--text-muted);
+  --color-brand: var(--gold);
+  --color-brand-strong: var(--gold-light);
+  --color-brand-ink: var(--surface-0); /* el oro es claro: la tinta encima va oscura */
+  --color-positive: var(--status-good);
+  --color-negative: var(--status-critical);
+  --color-focus: var(--gold-light);
+  --color-chart-comparison: var(--series-7);
+  --color-chart-cost: var(--series-2);
+  --color-chart-muted: var(--text-muted);
+  --color-chart-previous: var(--series-2);
+  --color-chart-track: var(--surface-2);
 }

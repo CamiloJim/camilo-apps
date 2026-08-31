@@ -1,23 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  Bar,
-  ComposedChart,
-  CartesianGrid,
-  Line,
-  Pie,
-  PieChart,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  Legend,
-} from "recharts";
 import type { HistoricalYear } from "@/lib/finance/historical";
 import { intrinsicPrice, projectFcf, terminalValue } from "@/lib/finance/dcf";
-import { Card, SectionLabel, fmtBillions, fmtUsd } from "../ui";
+import {
+  CHART_COLOR,
+  Card,
+  ChartLegend,
+  ComboChart,
+  DonutChart,
+  KpiStrip,
+  Tabla,
+  Td,
+  Th,
+  Widget,
+  WidgetGrid,
+  fmtBillions,
+  fmtUsd,
+} from "../ui";
 import { MarginGauge } from "../Gauge";
 
 export function DcfTab({
@@ -57,7 +57,7 @@ export function DcfTab({
   if (baseFcf === null || baseFcf <= 0) {
     return (
       <Card>
-        <p className="text-sm text-[var(--text-secondary)]">
+        <p className="text-[length:var(--text-md)] text-[var(--text-secondary)]">
           Insufficient or negative FCF history — DCF not available.
         </p>
       </Card>
@@ -82,24 +82,30 @@ export function DcfTab({
   const margin10 = price ? ((price10 - price) / price) * 100 : 0;
 
   const pvs = fcfs10.map((f, i) => f / Math.pow(1 + waccUsed, i + 1));
+  // El FCF proyectado va como barra y su valor presente como línea, sobre el
+  // mismo eje (ver ComboChart): las dos son dinero, y la lectura es justo la
+  // distancia entre ambas — cuánto se come el descuento según se aleja el año.
   const projData = fcfs10.map((f, i) => ({
-    year: `Y${i + 1}`,
-    "Projected FCF": f / 1e9,
-    "PV (discounted)": pvs[i] / 1e9,
+    label: `Y${i + 1}`,
+    values: [f / 1e9] as const,
+    pv: pvs[i] / 1e9,
   }));
 
   const pvFcfs10 = pvs.reduce((a, b) => a + b, 0);
   const pvTv10 = tv10 / Math.pow(1 + waccUsed, 10);
   const pieData = [
-    { name: "PV of FCFs", value: Math.max(pvFcfs10, 0), color: "var(--series-1)" },
-    { name: "PV of Terminal Value", value: Math.max(pvTv10, 0), color: "var(--series-3)" },
-    { name: "Net Cash", value: Math.max(netCash, 0), color: "var(--series-4)" },
+    { label: "PV of FCFs", value: Math.max(pvFcfs10, 0), color: CHART_COLOR.accent },
+    { label: "PV of Terminal Value", value: Math.max(pvTv10, 0), color: CHART_COLOR.secondary },
+    { label: "Net Cash", value: Math.max(netCash, 0), color: CHART_COLOR.win },
   ];
+  const valorTotal = pieData.reduce((a, d) => a + d.value, 0);
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <SectionLabel>DCF Parameters</SectionLabel>
+    <div className="space-y-4">
+      <Widget
+        title="DCF Parameters"
+        meta={`Risk-free rate: ${(riskFree.rate * 100).toFixed(2)}% (${riskFree.source})`}
+      >
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
           <SliderField
             label="FCF Growth Rate (%)"
@@ -128,124 +134,97 @@ export function DcfTab({
             onChange={setPerpGrowthPct}
           />
         </div>
-        <p className="mt-4 font-mono text-xs text-[var(--text-muted)]">
-          Risk-Free Rate: {(riskFree.rate * 100).toFixed(2)}% ({riskFree.source})
-        </p>
-      </Card>
+      </Widget>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card className="p-4">
-          <div className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-            Current Price
-          </div>
-          <div className="mt-1 font-mono text-lg font-bold">{fmtUsd(price)}</div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-            Intrinsic Value (5yr)
-          </div>
-          <div className="mt-1 font-mono text-lg font-bold">{fmtUsd(price5)}</div>
-          <div className="text-xs text-[var(--text-secondary)]">
-            {margin5 >= 0 ? "+" : ""}
-            {margin5.toFixed(1)}%
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="text-[0.65rem] font-semibold uppercase tracking-wider text-[var(--text-muted)]">
-            Intrinsic Value (10yr)
-          </div>
-          <div className="mt-1 font-mono text-lg font-bold">{fmtUsd(price10)}</div>
-          <div className="text-xs text-[var(--text-secondary)]">
-            {margin10 >= 0 ? "+" : ""}
-            {margin10.toFixed(1)}%
-          </div>
-        </Card>
-      </div>
+      <KpiStrip
+        items={[
+          { label: "Current Price", value: fmtUsd(price) },
+          {
+            label: "Intrinsic Value (5yr)",
+            value: fmtUsd(price5),
+            sub: `${margin5 >= 0 ? "+" : ""}${margin5.toFixed(1)}% vs. precio`,
+          },
+          {
+            label: "Intrinsic Value (10yr)",
+            value: fmtUsd(price10),
+            sub: `${margin10 >= 0 ? "+" : ""}${margin10.toFixed(1)}% vs. precio`,
+          },
+        ]}
+      />
 
-      <Card>
-        <SectionLabel>Projected FCF — 10 Years</SectionLabel>
-        <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart data={projData}>
-            <CartesianGrid stroke="var(--border)" vertical={false} />
-            <XAxis dataKey="year" stroke="var(--text-muted)" fontSize={11} />
-            <YAxis stroke="var(--text-muted)" fontSize={11} />
-            <Tooltip
-              contentStyle={{
-                background: "var(--surface-2)",
-                border: "1px solid var(--border)",
-                borderRadius: 6,
-                fontSize: 12,
-              }}
-            />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="Projected FCF" fill="var(--series-1)" radius={[4, 4, 0, 0]} />
-            <Line
-              type="monotone"
-              dataKey="PV (discounted)"
-              stroke="var(--series-3)"
-              strokeWidth={2}
-              dot={{ r: 3 }}
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </Card>
+      <WidgetGrid>
+        <Widget
+          title="Projected FCF — 10 Years"
+          meta="Miles de millones de USD"
+          note="La barra es el flujo proyectado y la línea su valor presente. La distancia entre las dos ES el descuento: cuanto más lejos el año, menos vale hoy."
+        >
+          <ComboChart
+            data={projData.map((d) => ({ label: d.label, values: d.values, line: d.pv }))}
+            keys={["Projected FCF"]}
+            colors={[CHART_COLOR.accent]}
+            lineColor={CHART_COLOR.win}
+            lineLabel="PV (discounted)"
+            lineFmt={(v) => `${v.toFixed(1)}B`}
+            fmt={(v) => `${v.toFixed(1)}B`}
+            height={280}
+          />
+          <ChartLegend
+            items={[
+              { label: "Projected FCF", color: CHART_COLOR.accent },
+              { label: "PV (discounted)", color: CHART_COLOR.win },
+            ]}
+          />
+        </Widget>
 
-      <Card>
-        <SectionLabel>Margin of Safety</SectionLabel>
-        <div className="flex flex-wrap justify-around gap-6">
-          <MarginGauge label="5-Year Horizon" margin={margin5} />
-          <MarginGauge label="10-Year Horizon" margin={margin10} />
-        </div>
-      </Card>
+        <Widget
+          title="Margin of Safety"
+          meta="El centro del arco es el precio justo"
+          span={6}
+        >
+          <div className="flex flex-wrap justify-around gap-6">
+            <MarginGauge label="5-Year Horizon" margin={margin5} />
+            <MarginGauge label="10-Year Horizon" margin={margin10} />
+          </div>
+        </Widget>
 
-      <Card>
-        <SectionLabel>Year-by-Year DCF Table</SectionLabel>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--border)] text-left text-xs text-[var(--text-muted)]">
-              <th className="py-1.5 font-medium">Year</th>
-              <th className="py-1.5 font-medium">Projected FCF</th>
-              <th className="py-1.5 font-medium">PV (discounted)</th>
-              <th className="py-1.5 font-medium">Cumulative PV</th>
-            </tr>
-          </thead>
-          <tbody>
-            {fcfs10.map((f, i) => (
-              <tr key={i} className="border-b border-[var(--border)] last:border-0">
-                <td className="py-1.5 font-mono">Y{i + 1}</td>
-                <td className="py-1.5 font-mono">{fmtBillions(f)}</td>
-                <td className="py-1.5 font-mono">{fmtBillions(pvs[i])}</td>
-                <td className="py-1.5 font-mono">
-                  {fmtBillions(pvs.slice(0, i + 1).reduce((a, b) => a + b, 0))}
-                </td>
+        <Widget
+          title="Value Composition (10yr)"
+          meta={fmtBillions(valorTotal)}
+          span={6}
+          note="Si el valor terminal pesa más que los flujos, la valoración depende sobre todo de un supuesto a diez años vista."
+        >
+          <DonutChart
+            data={pieData}
+            centerLabel={fmtBillions(valorTotal)}
+            centerSub="valor total"
+            fmt={(v) => fmtBillions(v)}
+            size={180}
+          />
+        </Widget>
+
+        <Widget title="Year-by-Year DCF Table">
+          <Tabla>
+            <thead>
+              <tr>
+                <Th num={false}>Year</Th>
+                <Th num>Projected FCF</Th>
+                <Th num>PV (discounted)</Th>
+                <Th num>Cumulative PV</Th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
-
-      <Card>
-        <SectionLabel>Value Composition (10yr)</SectionLabel>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie data={pieData} dataKey="value" nameKey="name" innerRadius={70} outerRadius={110}>
-              {pieData.map((d) => (
-                <Cell key={d.name} fill={d.color} />
+            </thead>
+            <tbody>
+              {fcfs10.map((f, i) => (
+                <tr key={i}>
+                  <Td num={false}>Y{i + 1}</Td>
+                  <Td>{fmtBillions(f)}</Td>
+                  <Td>{fmtBillions(pvs[i])}</Td>
+                  <Td>{fmtBillions(pvs.slice(0, i + 1).reduce((a, b) => a + b, 0))}</Td>
+                </tr>
               ))}
-            </Pie>
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Tooltip
-              formatter={(v) => fmtBillions(typeof v === "number" ? v : null)}
-              contentStyle={{
-                background: "var(--surface-2)",
-                border: "1px solid var(--border)",
-                borderRadius: 6,
-                fontSize: 12,
-              }}
-            />
-          </PieChart>
-        </ResponsiveContainer>
-      </Card>
+            </tbody>
+          </Tabla>
+        </Widget>
+      </WidgetGrid>
     </div>
   );
 }
@@ -269,9 +248,11 @@ function SliderField({
 }) {
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between text-xs text-[var(--text-secondary)]">
+      <div className="mb-1 flex items-center justify-between text-[length:var(--text-md)] text-[var(--text-secondary)]">
         <span>{label}</span>
-        <span className="font-mono text-[var(--text-primary)]">{value.toFixed(2)}%</span>
+        <span className="font-mono tabular-nums text-[var(--text-primary)]">
+          {value.toFixed(2)}%
+        </span>
       </div>
       <input
         type="range"
@@ -281,7 +262,7 @@ function SliderField({
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(Number(e.target.value))}
-        className="w-full accent-[var(--series-1)] disabled:opacity-40"
+        className="w-full accent-[var(--gold)] disabled:opacity-40"
       />
     </div>
   );

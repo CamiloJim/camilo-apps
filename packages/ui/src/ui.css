@@ -1,0 +1,656 @@
+/*
+ * Componentes compartidos — Screener y Trading Tracker.
+ *
+ * La gramática viene de marketing-app (`.paid-*` en apps/web/app/globals.css):
+ * misma anatomía de widget (cabecera + meta + leyenda + nota al pie), misma
+ * tira de KPIs, mismas tablas. Renombrado a `cj-` porque aquí no hay nada de
+ * paid media.
+ *
+ * Por qué CSS y no Tailwind: estas piezas se repiten en las dos apps y en casi
+ * todas las pantallas. Un `.cj-widget` es una decisión de diseño con nombre;
+ * doce clases de utilidad repetidas en catorce sitios no lo son, y se
+ * desincronizan en cuanto alguien edita una sola.
+ *
+ * Depende de tokens.css. Se importa después de él.
+ */
+
+/* ── Estructura de página ──────────────────────────────────────────────── */
+
+.cj-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+/*
+ * Fija y con scroll propio: el Screener con los filtros abiertos supera el alto
+ * de la ventana, y sin esto la barra empuja la página entera.
+ */
+.cj-sidebar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  width: 15rem;
+  max-height: 100vh;
+  flex: none;
+  flex-direction: column;
+  gap: var(--space-5);
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+  background: var(--surface-1);
+  padding: var(--space-5) var(--space-4);
+}
+
+.cj-sidebar--wide {
+  width: 18rem;
+}
+
+/* Marca: el wordmark en serif es lo que ata las apps a las landings. */
+.cj-brand {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.cj-brand strong {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: var(--text-title-md);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.cj-brand strong em {
+  color: var(--gold);
+  font-style: normal;
+}
+
+.cj-brand span {
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.cj-main {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-5);
+  padding: var(--space-5) var(--space-6);
+}
+
+.cj-page-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: var(--space-4);
+}
+
+.cj-page-header h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: var(--text-title-lg);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.cj-page-header h1 span {
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: var(--text-lg);
+  font-weight: 400;
+}
+
+/* ── Navegación lateral ────────────────────────────────────────────────── */
+
+.cj-nav {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.cj-nav button {
+  display: block;
+  width: 100%;
+  border: 0;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 0.5rem var(--space-3);
+  font: inherit;
+  font-size: var(--text-md);
+  text-align: left;
+  transition: background-color var(--transition-interaction), color var(--transition-interaction);
+}
+
+.cj-nav button:hover {
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+.cj-nav button[aria-current="page"] {
+  background: var(--gold-soft);
+  color: var(--gold-light);
+  font-weight: 600;
+}
+
+/* ── Etiqueta de sección ───────────────────────────────────────────────── */
+
+.cj-section-label {
+  color: var(--text-muted);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Widget: la tarjeta de contenido ───────────────────────────────────── */
+
+.cj-widget {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: var(--space-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  padding: var(--space-5);
+}
+
+.cj-widget__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.cj-widget__header h3 {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: var(--text-title-sm);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/* El "meta": la aclaración que evita malinterpretar la cifra. */
+.cj-widget__header small {
+  display: block;
+  margin-top: 0.15rem;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.cj-widget__controls {
+  display: flex;
+  flex: none;
+  gap: 0.15rem;
+}
+
+.cj-widget__controls button {
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.25rem 0.6rem;
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.cj-widget__controls button[aria-pressed="true"] {
+  border-color: var(--gold-border);
+  background: var(--gold-soft);
+  color: var(--gold-light);
+}
+
+.cj-widget__note {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+/* ── Rejilla de widgets, 12 columnas ───────────────────────────────────── */
+
+.cj-widget-grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+}
+
+.cj-widget-grid > .cj-widget {
+  grid-column: 1 / -1;
+}
+
+.cj-widget-grid > .cj-span-4 { grid-column: span 4; }
+.cj-widget-grid > .cj-span-6 { grid-column: span 6; }
+.cj-widget-grid > .cj-span-8 { grid-column: span 8; }
+
+@media (max-width: 60rem) {
+  .cj-widget-grid > .cj-span-4,
+  .cj-widget-grid > .cj-span-6,
+  .cj-widget-grid > .cj-span-8 {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── Tira de KPIs ──────────────────────────────────────────────────────── */
+/*
+ * Una sola caja dividida por separadores, no N tarjetas sueltas: los KPIs de
+ * un mismo periodo son una lectura, no seis objetos independientes.
+ */
+.cj-kpi-strip {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card);
+  background: var(--surface-1);
+  grid-template-columns: repeat(var(--cj-kpi-cols, 6), minmax(0, 1fr));
+}
+
+.cj-kpi-strip article {
+  display: grid;
+  min-width: 0;
+  align-items: end;
+  gap: 0.35rem;
+  border-right: 1px solid var(--border);
+  padding: var(--space-4);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Con sparkline la celda se parte en dos: cifra a la izquierda, curva a la derecha. */
+.cj-kpi-strip article.has-spark {
+  grid-template-columns: minmax(0, 1fr) 3.4rem;
+}
+
+.cj-kpi-strip article:last-child {
+  border-right: 0;
+}
+
+.cj-kpi-strip article > div {
+  display: grid;
+  min-width: 0;
+  gap: 0.3rem;
+}
+
+/*
+ * La etiqueta se parte en dos líneas en vez de cortarse con puntos suspensivos.
+ * Con seis columnas, "BALANCE DE PUNTOS" y "RIESGO / BENEFICIO" no caben en una
+ * sola y salían como "BALANCE DE PU…", que esconde justo la palabra que
+ * distingue una métrica de otra. `min-height` reserva las dos líneas siempre,
+ * para que las cifras de todas las celdas queden alineadas entre sí.
+ */
+.cj-kpi-strip span {
+  display: block;
+  min-height: 2.1em;
+  color: var(--text-muted);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.05;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.cj-kpi-strip strong {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+  font-size: var(--text-kpi-md);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.cj-kpi-strip small {
+  display: block;
+  overflow: hidden;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cj-kpi-strip svg {
+  width: 100%;
+  overflow: visible;
+}
+
+.cj-kpi-strip polyline {
+  fill: none;
+  stroke: var(--gold);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+  vector-effect: non-scaling-stroke;
+}
+
+@media (max-width: 75rem) {
+  .cj-kpi-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .cj-kpi-strip article:nth-child(3n) {
+    border-right: 0;
+  }
+}
+
+@media (max-width: 40rem) {
+  .cj-kpi-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .cj-kpi-strip article:nth-child(3n) {
+    border-right: 1px solid var(--border);
+  }
+  .cj-kpi-strip article:nth-child(2n) {
+    border-right: 0;
+  }
+}
+
+/* ── Pestañas ──────────────────────────────────────────────────────────── */
+
+.cj-tabs {
+  display: flex;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+  gap: var(--space-1);
+}
+
+.cj-tabs button {
+  border: 0;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0.6rem var(--space-4);
+  font: inherit;
+  font-size: var(--text-md);
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color var(--transition-interaction), border-color var(--transition-interaction);
+}
+
+.cj-tabs button:hover {
+  color: var(--text-secondary);
+}
+
+.cj-tabs button[aria-selected="true"] {
+  border-bottom-color: var(--gold);
+  color: var(--text-primary);
+}
+
+/* ── Tablas ────────────────────────────────────────────────────────────── */
+
+.cj-table-wrap {
+  overflow-x: auto;
+}
+
+.cj-table-wrap table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-md);
+}
+
+.cj-table-wrap th,
+.cj-table-wrap td {
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-3) var(--space-2);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.cj-table-wrap th {
+  color: var(--text-muted);
+  font-size: var(--text-2xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.cj-table-wrap tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.cj-table-wrap tbody tr:hover {
+  background: var(--surface-2);
+}
+
+/* Toda celda numérica en cifras tabulares: las columnas se alinean al leerlas. */
+.cj-table-wrap td.is-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.cj-table-wrap th.is-num {
+  text-align: right;
+}
+
+/*
+ * Matriz de calor (sensibilidad del Screener). Es una tabla y no un gráfico
+ * porque cada celda rotula un precio pero se colorea por el margen: dos
+ * magnitudes distintas que un mapa de calor genérico no sabe separar.
+ */
+.cj-heat-matrix {
+  border-collapse: separate;
+  border-spacing: 2px;
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.cj-heat-matrix th {
+  border: 0;
+  color: var(--text-muted);
+  padding: var(--space-2);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-align: center;
+  text-transform: none;
+}
+
+.cj-heat-matrix td {
+  border: 0;
+  border-radius: 3px;
+  /* Blanco fijo, no un token: el fondo de la celda va de azul a rojo saturado
+     y el texto tiene que leerse sobre los dos extremos. */
+  color: #fff;
+  padding: var(--space-2);
+  font-weight: 600;
+  text-align: center;
+}
+
+.cj-heat-matrix tbody tr:hover {
+  background: transparent;
+}
+
+/* ── Controles ─────────────────────────────────────────────────────────── */
+
+.cj-input,
+.cj-select {
+  width: 100%;
+  min-height: var(--control-h-sm);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-control);
+  background: var(--surface-2);
+  color: var(--text-primary);
+  padding: 0 var(--space-3);
+  font: inherit;
+  font-size: var(--text-md);
+  outline: none;
+  transition: border-color var(--transition-interaction);
+}
+
+.cj-input:focus,
+.cj-select:focus {
+  border-color: var(--gold);
+}
+
+.cj-input:disabled {
+  opacity: 0.4;
+}
+
+.cj-input--num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.cj-button {
+  display: inline-flex;
+  min-height: var(--control-h-sm);
+  align-items: center;
+  justify-content: center;
+  border: 1px solid transparent;
+  border-radius: var(--radius-control);
+  cursor: pointer;
+  padding: 0 var(--space-4);
+  font: inherit;
+  font-size: var(--text-md);
+  font-weight: 650;
+  transition: background-color var(--transition-interaction), border-color var(--transition-interaction), color var(--transition-interaction);
+}
+
+.cj-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.cj-button--primary {
+  background: var(--gold);
+  color: var(--color-brand-ink);
+}
+
+.cj-button--primary:hover:not(:disabled) {
+  background: var(--gold-light);
+}
+
+.cj-button--secondary {
+  border-color: var(--border);
+  background: var(--surface-1);
+  color: var(--text-secondary);
+}
+
+.cj-button--secondary:hover:not(:disabled) {
+  border-color: var(--gold-border);
+  background: var(--surface-2);
+  color: var(--text-primary);
+}
+
+/* ── Chips de estado ───────────────────────────────────────────────────── */
+
+.cj-chip {
+  display: inline-block;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ── Piezas de los gráficos (charts.tsx) ───────────────────────────────── */
+
+.cj-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  color: var(--text-muted);
+  font-size: var(--text-sm);
+}
+
+.cj-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.cj-chart-legend i {
+  width: 0.8rem;
+  height: 0.55rem;
+  flex: none;
+  border-radius: 2px;
+}
+
+.cj-donut-layout {
+  display: flex;
+  min-height: 11rem;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+}
+
+/*
+ * Leyenda del donut con valor Y porcentaje, no solo un punto de color: un
+ * "43,5 %" sin el absoluto al lado no dice si son 10 operaciones o 400.
+ *
+ * `min-width` es lo que impide que se estruje: en una tarjeta de media anchura
+ * la leyenda se comprimía hasta cortar el nombre de la serie —"PV of FCFs"
+ * quedaba en "PV of"—, que es justo el dato que la leyenda existe para dar.
+ * Con un mínimo, el contenedor la baja debajo del donut en vez de recortarla.
+ */
+.cj-donut-legend {
+  display: grid;
+  min-width: 13rem;
+  flex: 1 1 auto;
+  gap: 0.45rem;
+  color: var(--text-muted);
+  font-size: var(--text-base);
+}
+
+.cj-donut-legend span {
+  display: grid;
+  align-items: center;
+  gap: 0.5rem;
+  grid-template-columns: 0.6rem minmax(0, 1fr) auto auto;
+}
+
+.cj-donut-legend i {
+  width: 0.6rem;
+  height: 0.6rem;
+  border-radius: 2px;
+}
+
+.cj-donut-legend span > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cj-donut-legend b,
+.cj-donut-legend strong {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.cj-donut-legend b {
+  color: var(--text-secondary);
+}
+
+.cj-donut-legend strong {
+  min-width: 3.2rem;
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.cj-gauge {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+}
+
+.cj-gauge__value {
+  margin-top: -2.6rem;
+  font-family: var(--font-mono);
+  font-size: var(--text-kpi-lg);
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+/* ── Foco visible, en toda la app ──────────────────────────────────────── */
+
+:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}

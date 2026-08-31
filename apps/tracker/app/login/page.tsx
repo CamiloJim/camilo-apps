@@ -15,11 +15,11 @@ export default function LoginPage() {
   if (!supabase) {
     return (
       <main className="flex min-h-screen items-center justify-center px-4">
-        <div className="max-w-md rounded-lg border border-[var(--border)] bg-[var(--surface-1)] p-8 text-center">
-          <h1 className="text-lg font-semibold text-[var(--text-primary)]">
+        <div className="cj-widget max-w-md !p-8 text-center">
+          <h1 className="m-0 font-[family-name:var(--font-display)] text-[length:var(--text-title-md)] font-semibold text-[var(--text-primary)]">
             Supabase no configurado
           </h1>
-          <p className="mt-2 text-sm text-[var(--text-secondary)]">
+          <p className="text-[length:var(--text-md)] text-[var(--text-secondary)]">
             Faltan <code>NEXT_PUBLIC_SUPABASE_URL</code> y{" "}
             <code>NEXT_PUBLIC_SUPABASE_ANON_KEY</code> en el entorno. Copia{" "}
             <code>.env.local.example</code> a <code>.env.local</code> y completa los
@@ -53,43 +53,42 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-lg border border-[var(--border)] bg-[var(--surface-1)] p-8"
-      >
-        <h1 className="text-xl font-semibold text-[var(--text-primary)]">
-          Trading Tracker
-        </h1>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          Bitácora de operaciones — Camilo Jiménez
-        </p>
+      <form onSubmit={handleSubmit} className="cj-widget w-full max-w-sm !p-8">
+        <div className="cj-brand">
+          <strong>
+            Trading <em>Tracker</em>
+          </strong>
+          <span>Bitácora de operaciones — Camilo Jiménez</span>
+        </div>
 
-        <div className="mt-6 space-y-4">
+        <div className="space-y-4">
           <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+            <label className="cj-section-label mb-1 block" htmlFor="email">
               Correo electrónico
             </label>
             <input
+              id="email"
               type="email"
               required
               autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="ejemplo@correo.com"
-              className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--series-1)]"
+              className="cj-input"
             />
           </div>
           <div>
-            <label className="mb-1 block text-xs font-medium uppercase tracking-wide text-[var(--text-muted)]">
+            <label className="cj-section-label mb-1 block" htmlFor="password">
               Contraseña
             </label>
             <input
+              id="password"
               type="password"
               required
               autoComplete="current-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-3 py-2 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--series-1)]"
+              className="cj-input"
             />
           </div>
         </div>
@@ -97,21 +96,17 @@ export default function LoginPage() {
         {error && (
           <p
             role="alert"
-            className="mt-4 rounded-md border border-[var(--status-critical)]/40 bg-[var(--status-critical)]/10 px-3 py-2 text-sm text-[var(--status-critical)]"
+            className="rounded-md border border-[var(--status-critical)]/40 bg-[var(--status-critical)]/10 px-3 py-2 text-[length:var(--text-md)] text-[var(--status-critical)]"
           >
             {error}
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-6 w-full rounded-md bg-[var(--series-1)] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-        >
+        <button type="submit" disabled={loading} className="cj-button cj-button--primary w-full">
           {loading ? "Ingresando…" : "Ingresar"}
         </button>
 
-        <p className="mt-4 text-center text-xs text-[var(--text-muted)]">
+        <p className="text-center text-[length:var(--text-sm)] text-[var(--text-muted)]">
           Las cuentas las crea un administrador. Si no tienes acceso, contacta al
           Equipo de Soporte.
         </p>

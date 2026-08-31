@@ -1,149 +1,137 @@
 "use client";
 
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  ComposedChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-  Legend,
-} from "recharts";
 import type { HistoricalYear } from "@/lib/finance/historical";
-import { Card, SectionLabel, fmtBillions } from "../ui";
-
-const chartTheme = {
-  grid: "var(--border)",
-  axis: "var(--text-muted)",
-};
+import {
+  CHART_COLOR,
+  Card,
+  ChartLegend,
+  ComboChart,
+  Tabla,
+  Td,
+  Th,
+  Widget,
+  WidgetGrid,
+  fmtBillions,
+} from "../ui";
 
 export function FinancialsTab({ hist }: { hist: HistoricalYear[] }) {
   if (hist.length === 0) {
     return (
       <Card>
-        <p className="text-sm text-[var(--text-secondary)]">
+        <p className="text-[length:var(--text-md)] text-[var(--text-secondary)]">
           No historical financial data available.
         </p>
       </Card>
     );
   }
 
+  // Los nulos van a 0 en el gráfico: una barra ausente y una barra en cero se
+  // distinguen mal, y la tabla de abajo ya muestra el "—" cuando el dato no
+  // existe. El gráfico da la forma; la tabla, el dato exacto.
   const revData = hist.map((h) => ({
-    year: h.year,
-    Revenue: h.revenue !== null ? h.revenue / 1e9 : null,
-    "Net Income": h.netIncome !== null ? h.netIncome / 1e9 : null,
+    label: String(h.year),
+    values: [(h.revenue ?? 0) / 1e9, (h.netIncome ?? 0) / 1e9],
   }));
 
   const fcfData = hist.map((h) => ({
-    year: h.year,
-    "Operating CF": h.opCf !== null ? h.opCf / 1e9 : null,
-    FCF: h.fcf !== null ? h.fcf / 1e9 : null,
+    label: String(h.year),
+    values: [(h.opCf ?? 0) / 1e9],
+    line: (h.fcf ?? 0) / 1e9,
   }));
 
+  const enMiles = (v: number) => `${v.toFixed(1)}B`;
+
   return (
-    <div className="space-y-6">
-      <Card>
-        <SectionLabel>Revenue &amp; Net Income (USD Billions)</SectionLabel>
-        <ResponsiveContainer width="100%" height={280}>
-          <BarChart data={revData}>
-            <CartesianGrid stroke={chartTheme.grid} vertical={false} />
-            <XAxis dataKey="year" stroke={chartTheme.axis} fontSize={11} />
-            <YAxis stroke={chartTheme.axis} fontSize={11} />
-            <Tooltip
-              contentStyle={{
-                background: "var(--surface-2)",
-                border: "1px solid var(--border)",
-                borderRadius: 6,
-                fontSize: 12,
-              }}
-            />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="Revenue" fill="var(--series-1)" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Net Income" fill="var(--series-3)" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-      </Card>
+    <div className="space-y-4">
+      <WidgetGrid>
+        <Widget title="Revenue & Net Income" meta="Miles de millones de USD" span={6}>
+          <ComboChart
+            data={revData}
+            keys={["Revenue", "Net Income"]}
+            colors={[CHART_COLOR.accent, CHART_COLOR.win]}
+            fmt={enMiles}
+            height={260}
+          />
+          <ChartLegend
+            items={[
+              { label: "Revenue", color: CHART_COLOR.accent },
+              { label: "Net Income", color: CHART_COLOR.win },
+            ]}
+          />
+        </Widget>
 
-      <Card>
-        <SectionLabel>Free Cash Flow vs Operating Cash Flow (USD Billions)</SectionLabel>
-        <ResponsiveContainer width="100%" height={260}>
-          <ComposedChart data={fcfData}>
-            <CartesianGrid stroke={chartTheme.grid} vertical={false} />
-            <XAxis dataKey="year" stroke={chartTheme.axis} fontSize={11} />
-            <YAxis stroke={chartTheme.axis} fontSize={11} />
-            <Tooltip
-              contentStyle={{
-                background: "var(--surface-2)",
-                border: "1px solid var(--border)",
-                borderRadius: 6,
-                fontSize: 12,
-              }}
-            />
-            <Legend wrapperStyle={{ fontSize: 12 }} />
-            <Bar dataKey="Operating CF" fill="var(--series-1)" radius={[4, 4, 0, 0]} />
-            <Line
-              type="monotone"
-              dataKey="FCF"
-              stroke="var(--series-3)"
-              strokeWidth={2}
-              dot={{ r: 4 }}
-            />
-          </ComposedChart>
-        </ResponsiveContainer>
-      </Card>
+        <Widget
+          title="Free Cash Flow vs Operating Cash Flow"
+          meta="Miles de millones de USD"
+          span={6}
+          note="La barra es el flujo de operación y la línea el flujo libre. La diferencia entre las dos es lo que se va en inversión de capital."
+        >
+          <ComboChart
+            data={fcfData}
+            keys={["Operating CF"]}
+            colors={[CHART_COLOR.accent]}
+            lineColor={CHART_COLOR.win}
+            lineLabel="FCF"
+            lineFmt={enMiles}
+            fmt={enMiles}
+            height={260}
+          />
+          <ChartLegend
+            items={[
+              { label: "Operating CF", color: CHART_COLOR.accent },
+              { label: "FCF", color: CHART_COLOR.win },
+            ]}
+          />
+        </Widget>
 
-      <Card>
-        <SectionLabel>Year-over-Year Growth (%)</SectionLabel>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--border)] text-left text-xs text-[var(--text-muted)]">
-              <th className="py-1.5 font-medium">Year</th>
-              <th className="py-1.5 font-medium">Revenue</th>
-              <th className="py-1.5 font-medium">Op Income</th>
-              <th className="py-1.5 font-medium">Net Income</th>
-              <th className="py-1.5 font-medium">FCF</th>
-            </tr>
-          </thead>
-          <tbody>
-            {hist.map((h) => (
-              <tr key={h.year} className="border-b border-[var(--border)] last:border-0">
-                <td className="py-1.5 font-mono">{h.year}</td>
-                <td className="py-1.5 font-mono">{fmtYoY(h.revenueYoY)}</td>
-                <td className="py-1.5 font-mono">{fmtYoY(h.opIncomeYoY)}</td>
-                <td className="py-1.5 font-mono">{fmtYoY(h.netIncomeYoY)}</td>
-                <td className="py-1.5 font-mono">{fmtYoY(h.fcfYoY)}</td>
+        <Widget title="Year-over-Year Growth" meta="%" span={6}>
+          <Tabla>
+            <thead>
+              <tr>
+                <Th num={false}>Year</Th>
+                <Th num>Revenue</Th>
+                <Th num>Op Income</Th>
+                <Th num>Net Income</Th>
+                <Th num>FCF</Th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+            </thead>
+            <tbody>
+              {hist.map((h) => (
+                <tr key={h.year}>
+                  <Td num={false}>{h.year}</Td>
+                  <Td>{fmtYoY(h.revenueYoY)}</Td>
+                  <Td>{fmtYoY(h.opIncomeYoY)}</Td>
+                  <Td>{fmtYoY(h.netIncomeYoY)}</Td>
+                  <Td>{fmtYoY(h.fcfYoY)}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </Tabla>
+        </Widget>
 
-      <Card>
-        <SectionLabel>Balance Sheet Summary (USD Billions)</SectionLabel>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-[var(--border)] text-left text-xs text-[var(--text-muted)]">
-              <th className="py-1.5 font-medium">Year</th>
-              <th className="py-1.5 font-medium">Debt</th>
-              <th className="py-1.5 font-medium">Cash</th>
-              <th className="py-1.5 font-medium">Equity</th>
-            </tr>
-          </thead>
-          <tbody>
-            {hist.map((h) => (
-              <tr key={h.year} className="border-b border-[var(--border)] last:border-0">
-                <td className="py-1.5 font-mono">{h.year}</td>
-                <td className="py-1.5 font-mono">{fmtBillions(h.debt)}</td>
-                <td className="py-1.5 font-mono">{fmtBillions(h.cash)}</td>
-                <td className="py-1.5 font-mono">{fmtBillions(h.equity)}</td>
+        <Widget title="Balance Sheet Summary" meta="Miles de millones de USD" span={6}>
+          <Tabla>
+            <thead>
+              <tr>
+                <Th num={false}>Year</Th>
+                <Th num>Debt</Th>
+                <Th num>Cash</Th>
+                <Th num>Equity</Th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </Card>
+            </thead>
+            <tbody>
+              {hist.map((h) => (
+                <tr key={h.year}>
+                  <Td num={false}>{h.year}</Td>
+                  <Td>{fmtBillions(h.debt)}</Td>
+                  <Td>{fmtBillions(h.cash)}</Td>
+                  <Td>{fmtBillions(h.equity)}</Td>
+                </tr>
+              ))}
+            </tbody>
+          </Tabla>
+        </Widget>
+      </WidgetGrid>
     </div>
   );
 }

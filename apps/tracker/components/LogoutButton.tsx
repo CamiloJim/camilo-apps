@@ -16,7 +16,7 @@ export function LogoutButton() {
         router.push("/login");
         router.refresh();
       }}
-      className="rounded-md border border-[var(--border)] px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] transition-colors hover:border-[var(--status-critical)] hover:text-[var(--status-critical)]"
+      className="cj-button cj-button--secondary"
     >
       Cerrar sesión
     </button>

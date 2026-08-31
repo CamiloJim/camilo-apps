@@ -1,16 +1,20 @@
 @import "tailwindcss";
-/* Tokens de diseño compartidos con el Trading Tracker — packages/ui. */
+/* Tokens y componentes compartidos con el Trading Tracker — packages/ui. */
 @import "../../../packages/ui/src/tokens.css";
+@import "../../../packages/ui/src/ui.css";
 
 @theme inline {
   --color-background: var(--surface-0);
   --color-foreground: var(--text-primary);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-outfit);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fraunces);
 }
 
 body {
   background: var(--surface-0);
   color: var(--text-primary);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-size: var(--text-md);
+  line-height: 1.5;
 }

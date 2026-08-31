@@ -9,7 +9,18 @@
 import type { ReactNode } from "react";
 import { colorInsight, type Insight } from "@/lib/trading/calc";
 
-export { Card, SectionLabel, Kpi, fmtUsd } from "@camilo-apps/ui";
+export { Card, Widget, WidgetGrid, SectionLabel, KpiStrip, fmtUsd } from "@camilo-apps/ui";
+export {
+  CHART_COLOR,
+  ChartLegend,
+  ComboChart,
+  DivergingStackedChart,
+  DonutChart,
+  Gauge,
+  LineChart,
+  QuadrantChart,
+  VarianceChart,
+} from "@camilo-apps/ui";
 
 /** Puntos, con signo explícito. El signo importa más que la magnitud aquí. */
 export function fmtPuntos(v: number, decimales = 2): string {
@@ -51,7 +62,7 @@ export function ChipInsight({ insight }: { insight: Insight }) {
   const color = colorInsight(insight);
   return (
     <span
-      className="inline-block whitespace-nowrap rounded-full border px-2 py-0.5 text-[0.7rem] font-semibold"
+      className="cj-chip"
       style={{ color, borderColor: `${color}55`, background: `${color}1a` }}
     >
       {insight}
@@ -61,18 +72,35 @@ export function ChipInsight({ insight }: { insight: Insight }) {
 
 export function Tabla({ children }: { children: ReactNode }) {
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">{children}</table>
+    <div className="cj-table-wrap">
+      <table>{children}</table>
     </div>
   );
 }
 
-export function Th({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <th className={`py-1.5 text-left font-medium ${className}`}>{children}</th>;
+/** `num` alinea a la derecha y en cifras tabulares: las columnas se leen en vertical. */
+export function Th({
+  children,
+  num = false,
+  className = "",
+}: {
+  children: ReactNode;
+  num?: boolean;
+  className?: string;
+}) {
+  return <th className={`${num ? "is-num" : ""} ${className}`}>{children}</th>;
 }
 
-export function Td({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <td className={`py-1.5 font-mono ${className}`}>{children}</td>;
+export function Td({
+  children,
+  num = true,
+  className = "",
+}: {
+  children: ReactNode;
+  num?: boolean;
+  className?: string;
+}) {
+  return <td className={`${num ? "is-num" : ""} ${className}`}>{children}</td>;
 }
 
 /** Input numérico compacto de la rejilla de registro. */
@@ -101,7 +129,7 @@ export function InputNum({
         const n = e.target.value === "" ? 0 : Number(e.target.value);
         onChange(Number.isNaN(n) ? 0 : Math.max(min, n));
       }}
-      className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-2 py-1 text-right font-mono text-sm text-[var(--text-primary)] outline-none focus:border-[var(--series-1)]"
+      className="cj-input cj-input--num"
     />
   );
 }
@@ -119,21 +147,4 @@ export function EstadoGuardado({ estado }: { estado: "idle" | "guardando" | "gua
       {estado === "guardando" ? "Guardando…" : "Guardado"}
     </span>
   );
-}
-
-/**
- * Envuelve un formatter de tooltip de Recharts.
- *
- * Recharts tipa el valor como `ValueType | undefined` (puede ser string, array
- * o venir vacío), así que un `(v: number) => …` no encaja. Esto normaliza a
- * número una sola vez en lugar de castear en cada gráfico.
- */
-export function fmtTooltip(
-  fn: (v: number) => string,
-  nombre?: string
-): (v: unknown, n: unknown) => [string, string] {
-  return (v, n) => {
-    const num = typeof v === "number" ? v : Number(v);
-    return [Number.isFinite(num) ? fn(num) : "—", nombre ?? String(n ?? "")];
-  };
 }

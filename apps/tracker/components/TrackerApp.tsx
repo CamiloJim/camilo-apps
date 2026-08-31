@@ -70,24 +70,21 @@ export function TrackerApp() {
   );
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="w-56 shrink-0 border-r border-[var(--border)] bg-[var(--surface-1)] p-4">
-        <div className="text-base font-semibold text-[var(--text-primary)]">
-          📊 Trading Tracker
+    <div className="cj-shell">
+      <aside className="cj-sidebar">
+        <div className="cj-brand">
+          <strong>
+            Trading <em>Tracker</em>
+          </strong>
+          <span>Seguimiento {ANIO}</span>
         </div>
-        <p className="mt-0.5 text-xs text-[var(--text-muted)]">Seguimiento {ANIO}</p>
 
-        <nav className="mt-6 space-y-1" aria-label="Secciones">
+        <nav className="cj-nav" aria-label="Secciones">
           {PAGINAS.map((p) => (
             <button
               key={p.id}
               onClick={() => setPagina(p.id)}
               aria-current={pagina === p.id ? "page" : undefined}
-              className={`block w-full rounded-md px-3 py-2 text-left text-sm transition-colors ${
-                pagina === p.id
-                  ? "bg-[var(--surface-2)] font-medium text-[var(--text-primary)]"
-                  : "text-[var(--text-secondary)] hover:bg-[var(--surface-2)]"
-              }`}
             >
               {p.label}
             </button>
@@ -95,14 +92,15 @@ export function TrackerApp() {
         </nav>
 
         {pagina !== "anual" && (
-          <div className="mt-6">
-            <label className="mb-1 block text-[0.65rem] font-bold uppercase tracking-wider text-[var(--text-muted)]">
+          <div>
+            <label className="cj-section-label mb-1 block" htmlFor="mes-activo">
               Mes activo
             </label>
             <select
+              id="mes-activo"
+              className="cj-select"
               value={mes}
               onChange={(e) => setMes(Number(e.target.value))}
-              className="w-full rounded-md border border-[var(--border)] bg-[var(--surface-2)] px-2 py-1.5 text-sm text-[var(--text-primary)] outline-none focus:border-[var(--series-1)]"
             >
               {MESES.map((m, i) => (
                 <option key={m} value={i + 1}>
@@ -114,12 +112,13 @@ export function TrackerApp() {
         )}
       </aside>
 
-      <main className="min-w-0 flex-1 p-6">
-        <div className="mb-6 flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-[var(--text-primary)]">
+      <main className="cj-main">
+        <div className="cj-page-header">
+          <h1>
             {PAGINAS.find((p) => p.id === pagina)?.label}
             {pagina !== "anual" && (
-              <span className="ml-2 text-[var(--text-muted)]">
+              <span>
+                {" "}
                 — {MESES[mes - 1]} {ANIO}
               </span>
             )}
